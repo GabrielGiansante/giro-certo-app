@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rota Fácil</title>
+    <title>Giro Certo</title> <!-- Título Atualizado -->
     <link rel="stylesheet" href="style.css">
     <!-- Script do Google Maps (VERIFIQUE E INSIRA SUA CHAVE REAL AQUI) -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBM9qCh73iNkQfXicPmoV7mUfRVpg-QgB4&callback=initMap&libraries=places,routes,geometry&v=weekly" defer async></script>
@@ -13,12 +13,11 @@
     <div id="app-container">
         <div id="controls">
 
-            <!-- TÍTULO PRINCIPAL DOS CONTROLES (FORA DA ÁREA STICKY) -->
+            <!-- TÍTULO PRINCIPAL DOS CONTROLES -->
             <h2>Escolha a categoria</h2>
 
             <!-- === ÁREA SUPERIOR FIXA (STICKY) === -->
             <div id="top-controls-area">
-                <!-- O H2 NÃO fica mais aqui dentro -->
                 <div id="category-buttons-container">
                     <div id="category-buttons">
                         <button class="category-btn" data-category="bar">Bares</button>
@@ -32,34 +31,29 @@
                     </div>
                 </div>
                 <div id="route-found-button-container">
-                    <!-- Linha ANTES: -->
-<!-- <button id="route-found-btn" class="route-found-button" disabled>Traçar Rota Encontrada</button> -->
-
-<!-- Linha DEPOIS (Atualizada): -->
-<button id="route-found-btn" class="route-found-button" disabled>Traçar Rota</button>
+                    <button id="route-found-btn" class="route-found-button" disabled>Traçar Rota</button>
                 </div>
             </div>
             <!-- === FIM ÁREA SUPERIOR FIXA === -->
 
             <!-- === CONTEÚDO ROLÁVEL ABAIXO === -->
             <div id="scrollable-controls">
-                <hr> <!-- Separador entre área sticky e conteúdo rolável -->
+                <hr> <!-- Separador -->
                 <!-- Área de Busca e Adição Manual -->
-                <p><strong>Ou adicione locais específicos à sua rota:</strong></p>
+                <p><strong>Ou adicione locais específicos:</strong></p> <!-- Texto ajustado -->
                 <input type="text" id="search-input" placeholder="Digite nome do local...">
                 <button id="add-location-btn">Adicionar à Rota</button>
 
-                <h3>Locais na Rota:</h3>
+                <h3>Locais Adicionados:</h3> <!-- Título ajustado -->
                 <ul id="selected-locations-list">
-                    <!-- Locais selecionados -->
+                    <!-- Locais selecionados manualmente -->
                 </ul>
 
-                <button id="calculate-route-btn">Calcular Rota Manual</button>
-                <hr>
+                <!-- BOTÃO "calculate-route-btn" REMOVIDO -->
 
-                <!-- Botão para Tour Automático a partir da localização atual -->
-                <!-- Verifique se o ID 'tour-bars-nearby-btn' está correto e corresponde ao JS -->
-                <button id="tour-bars-nearby-btn">Iniciar Tour de Bares Próximos</button>
+                <hr> <!-- Separador opcional, pode remover se quiser menos espaço -->
+
+                <!-- BOTÃO "tour-bars-nearby-btn" REMOVIDO -->
 
             </div>
             <!-- === FIM CONTEÚDO ROLÁVEL === -->
@@ -67,8 +61,11 @@
         </div> <!-- FIM DA DIV #controls -->
 
         <div id="map-container">
+             <!-- Botão Voltar (Adicionado Manualmente Conforme Instrução Anterior) -->
+             <button id="back-button">< Voltar</button>
             <p>Carregando mapa...</p>
         </div> <!-- FIM DA DIV #map-container -->
+
     </div> <!-- FIM DA DIV #app-container -->
 
     <script src="script.js"></script>

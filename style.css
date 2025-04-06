@@ -4,66 +4,78 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
+    min-height: 100vh; /* Garante altura mínima */
 }
 
 /* Container principal do app */
 #app-container {
-    display: flex;
+    display: flex; /* Lado a lado em desktop */
     max-width: 1200px;
-    margin: 20px auto;
+    margin: 20px auto; /* Margem em telas grandes */
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    overflow: hidden;
+    overflow: hidden; /* Contém elementos filhos */
+    min-height: calc(100vh - 40px); /* Altura mínima baseada na viewport (ajuste margem se necessário) */
+    position: relative; /* Contexto para #back-button posicionado absolutamente */
 }
 
-/* Coluna de Controles (Esquerda) */
+/* Coluna de Controles (Esquerda / Topo em mobile) */
 #controls {
-    width: 300px; /* Largura fixa */
-    flex-shrink: 0;
-    padding: 0; /* Padding interno */
-    border-right: 1px solid #eee;
+    width: 300px; /* Largura fixa em desktop */
+    flex-shrink: 0; /* Não encolhe em desktop */
+    padding: 0; /* Padding zero, controlado internamente */
+    border-right: 1px solid #eee; /* Borda separadora em desktop */
     background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 40px); /* Altura baseada na viewport */
-    position: relative;
+    display: flex; /* Usa flexbox para organizar filhos */
+    flex-direction: column; /* Empilha h2, top-controls, scrollable */
+    position: relative; /* Contexto para elementos sticky internos */
+    /* Transições para o modo mapa */
+    transition: width 0.3s ease, opacity 0.3s ease, visibility 0.3s ease, padding 0.3s ease, margin 0.3s ease, border 0.3s ease;
 }
 
-/* Título Principal (Fora da Área Sticky) */
+/* Título Principal dos Controles */
 #controls > h2 {
-     padding: 20px 20px 15px 20px;
-     margin: 0;
-     text-align: center;
-     background-color: #fff;
+    padding: 15px 20px 10px 20px; /* Padding ajustado */
+    margin: 0;
+    text-align: center;
+    background-color: #fff; /* Fundo consistente */
+    font-size: 1.1em; /* Ligeiramente menor */
+    flex-shrink: 0; /* Não encolhe */
 }
 
-/* Área Superior Fixa (Sticky) */
+/* Área Superior com Categorias e Botão Traçar Rota */
 #top-controls-area {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px; /* Gap horizontal entre container de categorias e botão traçar rota */
-    position: sticky;
-    /* !! AJUSTE ESTE VALOR DE 'top' !! */
-    top: 55px; /* Exemplo */
-    background-color: #fff;
-    z-index: 10;
-    padding: 15px 20px;
-    border-bottom: 1px solid #eee;
+    display: flex; /* Organiza containers de categorias e botão lado a lado */
+    align-items: flex-start; /* Alinha o topo dos containers */
+    gap: 10px; /* Espaço horizontal entre categorias e botão */
+    position: sticky; /* Fica fixo no topo de #controls ao rolar (DESKTOP) */
+    top: 0; /* Posição do sticky */
+    background-color: #fff; /* Fundo para cobrir conteúdo abaixo */
+    z-index: 10; /* Acima do conteúdo rolável */
+    padding: 10px 15px; /* Padding interno reduzido */
+    border-bottom: 1px solid #eee; /* Linha separadora */
+    flex-shrink: 0; /* Não encolhe */
 }
 
-/* Contêiner das categorias */
+/* Contêiner dos botões de categoria */
 #top-controls-area #category-buttons-container {
-    flex-grow: 1;
-    display: flex;
+    flex-grow: 1; /* Ocupa espaço horizontal disponível */
+    display: flex; /* Controla o #category-buttons interno */
     flex-direction: column;
-    /* gap: 8px; */ /* <<< GAP REMOVIDO */
 }
 
-/* Estilo dos Botões de Categoria (com MARGEM INFERIOR) */
+/* Div interno dos botões de categoria */
+#top-controls-area #category-buttons {
+    display: flex;
+    flex-direction: column; /* Botões ficam em coluna */
+    width: 100%;
+}
+
+/* Botões de Categoria */
 .category-btn {
-    padding: 10px 5px;
-    font-size: 0.9em;
+    padding: 8px 4px; /* Padding reduzido */
+    font-size: 0.85em; /* Fonte menor */
     background-color: #007bff;
     color: white;
     border: none;
@@ -73,38 +85,26 @@ body {
     text-align: center;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: 8px; /* <<< ADICIONADA MARGEM INFERIOR */
+    margin-bottom: 6px; /* Espaçamento vertical reduzido */
 }
-/* Remove a margem do último botão de categoria */
-#top-controls-area #category-buttons-container .category-btn:last-child {
-    margin-bottom: 0; /* <<< Remove margem do último */
+/* Estilo para o último botão DENTRO de #category-buttons */
+#top-controls-area #category-buttons .category-btn:last-child {
+    margin-bottom: 0; /* Remove margem inferior do último botão */
 }
-
 .category-btn:hover { background-color: #0056b3; }
 
-/* Contêiner do botão Traçar Rota */
-/* NOVO CÓDIGO (Substitua o bloco antigo por este) */
+/* Contêiner do botão "Traçar Rota" (da busca/categoria) */
 #top-controls-area #route-found-button-container {
-    flex-shrink: 0;
+    flex-shrink: 0; /* Não encolhe */
     display: flex;
-    /* ANTES: align-items: center; */
-    align-items: flex-start; /* <<< ALTERADO: Alinha o conteúdo (o botão) ao topo */
-    padding-left: 10px;
-    /* Removido height: 100%; para evitar que o container estique desnecessariamente */
-    /* height: 100%; */ /* <<< REMOVIDO ou COMENTADO */
+    align-items: flex-start; /* Alinha o botão ao topo */
+    padding-left: 5px; /* Espaço à esquerda reduzido */
 }
-/* Botão "Traçar Rota" */
-/* Botão "Traçar Rota" (ATUALIZADO - Tamanho e Cor) */
-/* === Arquivo: style.css === */
 
-/* ... (outros estilos antes) ... */
-
-/* Botão "Traçar Rota" (USANDO O ID PARA GARANTIR PRIORIDADE) */
-#route-found-btn { /* <<< MUDADO DE .route-found-button PARA #route-found-btn */
-    /* Aumentando o padding para torná-lo maior */
-    /* padding: 12px 16px; */   /* Linha antiga comentada */
-    padding: 14px;           /* <<< ALTERADO: Padding igual para parecer mais quadrado */
-    background-color: #28a745; /* Cor Verde */
+/* Botão "Traçar Rota" (da busca/categoria) - Seleciona por ID */
+#route-found-btn {
+    padding: 10px; /* Padding reduzido */
+    background-color: #28a745; /* Verde */
     color: white;
     border: none;
     border-radius: 5px;
@@ -112,54 +112,40 @@ body {
     font-weight: bold;
     transition: background-color 0.2s ease;
     text-align: center;
-    line-height: 1.2;
-    width: auto;
+    line-height: 1.1; /* Ajuste linha */
+    width: auto; /* Largura automática */
     min-width: 0;
-    font-size: 0.95em;        /* Fonte ligeiramente maior */
-
-    /* Removido align-self: center; se ainda existia */
-    /* align-self: center; */
-
-    /* Outros estilos base */
+    font-size: 0.9em; /* Fonte reduzida */
 }
+/* Classe .route-found-button é redundante se o ID é usado, mas mantida se JS usar */
+#route-found-btn.route-found-button { } /* Regra vazia opcional */
 
-/* Estilos de hover e disabled agora TAMBÉM usam o ID */
-#route-found-btn:hover:not(:disabled) { /* <<< MUDADO PARA # */
-    background-color: #218838;
+#route-found-btn:hover:not(:disabled) { background-color: #218838; } /* Verde mais escuro no hover */
+#route-found-btn:disabled { background-color: #cccccc; cursor: not-allowed; opacity: 0.7; } /* Cinza quando desabilitado */
+
+/* Área de Conteúdo Rolável (Input, Lista, botões inferiores) */
+#scrollable-controls {
+    padding: 15px; /* Padding uniforme */
+    overflow-y: auto; /* Habilita rolagem vertical APENAS nesta área */
+    flex-grow: 1; /* Faz esta área ocupar o espaço vertical restante em #controls */
+    /* Isso é crucial para o layout com max-height em mobile */
 }
-#route-found-btn:disabled { /* <<< MUDADO PARA # */
-    /* background-color: #adb5bd; */ /* Linha antiga comentada */
-    background-color: #cccccc;    /* <<< ALTERADO: Novo cinza para estado desabilitado */
-    cursor: not-allowed;
-    opacity: 0.7;
+#scrollable-controls hr { border: 0; height: 1px; background-color: #eee; margin: 10px 0; }
+
+/* Inputs e botões DENTRO da área rolável (usando IDs do seu HTML/JS) */
+#scrollable-controls #search-input,
+#scrollable-controls #add-location-btn,
+#scrollable-controls #calculate-route-btn,
+#scrollable-controls #tour-bars-nearby-btn {
+    width: 100%; /* Largura total */
+    padding: 8px; /* Padding reduzido */
+    margin-bottom: 8px; /* Margem inferior reduzida */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Para width 100% funcionar com padding */
+    font-size: 0.9em; /* Tamanho de fonte consistente */
 }
-
-/* IMPORTANTE: Se você tinha uma regra separada para .route-found-button,
-   pode apagar essa regra antiga agora, para evitar confusão. */
-
-
-/* Contêiner do botão Traçar Rota (Deve continuar como estava na última modificação) */
-#top-controls-area #route-found-button-container {
-    flex-shrink: 0;
-    display: flex;
-    align-items: flex-start; /* Mantém alinhado ao topo */
-    padding-left: 10px;
-    /* height: 100%; */ /* Mantém comentado ou removido */
-}
-
-
-/* ... (restante dos estilos) ... */
-/* Área de Conteúdo Rolável */
-#scrollable-controls { padding: 0 20px 20px 20px; overflow-y: auto; flex-grow: 1; }
-#scrollable-controls hr { border: 0; height: 1px; background-color: #eee; margin: 15px 0; }
-
-/* Estilos gerais para inputs e botões DENTRO da área rolável */
-#scrollable-controls input[type="text"], #scrollable-controls button {
-    width: calc(100% - 22px); padding: 10px; margin-bottom: 10px;
-    border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-}
-
-/* Estilos específicos para botões na área rolável */
+/* Estilos específicos de cor/fundo para botões */
 #scrollable-controls #add-location-btn { background-color: #6c757d; color: white; border: none; cursor: pointer; }
 #scrollable-controls #add-location-btn:hover { background-color: #5a6268; }
 #scrollable-controls #calculate-route-btn { background-color: #007bff; color: white; border: none; cursor: pointer; }
@@ -167,62 +153,223 @@ body {
 #scrollable-controls #tour-bars-nearby-btn { background-color: #28a745; color: white; border: none; cursor: pointer; }
 #scrollable-controls #tour-bars-nearby-btn:hover { background-color: #218838; }
 
-/* Lista de locais na área rolável */
+/* Lista de locais selecionados manualmente */
 #scrollable-controls #selected-locations-list {
-    list-style: none; padding: 0; margin-top: 10px; max-height: 200px;
-    overflow-y: auto; border: 1px dashed #ccc; padding: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0; /* Ajuste margens */
+    max-height: 180px; /* Altura máxima da lista (pode ajustar) */
+    overflow-y: auto; /* Rolagem se a lista crescer */
+    border: 1px dashed #ccc;
+    padding: 8px; /* Padding interno */
 }
 #scrollable-controls #selected-locations-list li {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 5px; border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between; /* Nome à esquerda, botão à direita */
+    align-items: center; /* Alinha verticalmente */
+    padding: 6px 4px; /* Padding interno do item */
+    border-bottom: 1px solid #eee; /* Linha separadora entre itens */
+    font-size: 0.9em;
 }
-#scrollable-controls #selected-locations-list li:last-child { border-bottom: none; }
-#scrollable-controls .remove-btn {
-    background-color: #dc3545; color: white; border: none; border-radius: 4px;
-    padding: 3px 8px; font-size: 0.9em; cursor: pointer; margin-left: 10px;
-    width: auto; margin-bottom: 0;
+#scrollable-controls #selected-locations-list li:last-child {
+    border-bottom: none; /* Remove borda do último item */
 }
-#scrollable-controls .remove-btn:hover { background-color: #c82333; }
+/* Botão remover dentro da lista */
+#scrollable-controls #selected-locations-list .remove-btn {
+    background-color: #dc3545; /* Vermelho */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px; /* Tamanho pequeno */
+    font-size: 0.8em; /* Fonte pequena */
+    cursor: pointer;
+    margin-left: 10px; /* Espaço à esquerda */
+    /* Resetar estilos herdados da regra geral de botões */
+    width: auto;
+    margin-bottom: 0;
+}
+#scrollable-controls #selected-locations-list .remove-btn:hover {
+    background-color: #c82333; /* Vermelho mais escuro */
+}
 
-/* Títulos DENTRO da área rolável */
-#scrollable-controls h3, #scrollable-controls p { margin-top: 15px; margin-bottom: 10px; color: #333; }
+/* Títulos H3 e parágrafos dentro da área rolável */
+#scrollable-controls h3, #scrollable-controls p {
+    margin-top: 10px;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 1em; /* Tamanho padrão */
+}
 
-/* Coluna do Mapa (Direita) */
+/* Container do Mapa (Direita / Embaixo em mobile) */
 #map-container {
-    flex-grow: 1; min-height: calc(100vh - 40px); display: flex;
-    align-items: center; justify-content: center; background-color: #e9e9e9;
+    flex-grow: 1; /* Ocupa espaço restante no flex container */
+    display: flex; /* Para centralizar texto "Carregando..." */
+    align-items: center;
+    justify-content: center;
+    background-color: #e9e9e9; /* Fundo placeholder */
+    position: relative; /* Contexto para o botão Voltar e elementos do mapa */
+    min-height: 200px; /* Altura mínima para garantir visibilidade */
+    /* Transição para o modo mapa */
+    transition: height 0.3s ease, width 0.3s ease;
+    /* O Google Maps renderizará seu conteúdo aqui dentro */
 }
-#map-container p { color: #666; }
-/* =============================================== */
-/* === Media Queries para Telas Pequenas === */
-/* =============================================== */
+/* Texto placeholder inicial (será removido/substituído pelo mapa) */
+#map-container > p {
+    color: #666;
+}
 
-/* Aplica estes estilos quando a largura da tela for 768px ou menor */
-/* =============================================== */
-/* === Media Queries para Telas Pequenas === */
-/* =============================================== */
+/* --- ESTILOS PARA PREPARAR O MODO MAPA (ATIVADO VIA JS) --- */
 
-/* Aplica estes estilos quando a largura da tela for 768px ou menor */
+/* Botão Voltar (inicialmente escondido)
+   !!! LEMBRE-SE DE ADICIONAR O ELEMENTO <button id="back-button">... NO SEU index.html DENTRO DE #map-container !!! */
+#back-button {
+    position: absolute; /* Posicionado relativo ao #map-container (ou #app-container se preferir) */
+    top: 10px;          /* Distância do topo */
+    left: 10px;         /* Distância da esquerda */
+    z-index: 1000;      /* Acima da maioria dos controles do mapa */
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.85); /* Fundo branco semi-transparente */
+    color: #333; /* Texto escuro */
+    border: 1px solid rgba(0, 0, 0, 0.2); /* Borda sutil */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2); /* Sombra para destaque */
+    display: none; /* INICIALMENTE ESCONDIDO */
+    transition: background-color 0.2s ease;
+}
+#back-button:hover {
+    background-color: rgba(248, 248, 248, 0.95); /* Levemente mais opaco no hover */
+}
+
+/* Classe a ser adicionada ao #app-container via JS para ativar o modo mapa */
+#app-container.map-only-mode #controls {
+    /* Esconde os controles */
+    opacity: 0;
+    visibility: hidden;
+    width: 0; /* Encolhe a largura */
+    padding: 0 !important; /* Força padding zero */
+    margin: 0 !important; /* Força margem zero */
+    border: none !important; /* Remove bordas */
+    /* Permite encolher completamente no flex layout */
+    flex-shrink: 1;
+    overflow: hidden; /* Garante que nada vaze */
+}
+
+#app-container.map-only-mode #map-container {
+    /* Faz o mapa ocupar todo o espaço do container pai */
+    height: 100%;
+    width: 100%;
+    flex-grow: 1; /* Garante preenchimento */
+    flex-shrink: 0; /* Não permite encolher */
+}
+
+#app-container.map-only-mode #back-button {
+    display: block; /* Mostra o botão Voltar */
+}
+
+
+/* =============================================== */
+/* === Media Queries para Telas Pequenas (<= 768px) === */
+/* =============================================== */
 @media (max-width: 768px) {
 
     #app-container {
-        flex-direction: column !important; /* <<< FORÇA A COLUNA */
-        height: auto; /* Deixa altura livre por enquanto */
+        flex-direction: column; /* Empilha controles ACIMA do mapa */
+        margin: 0; /* Remove margens laterais */
+        border-radius: 0; /* Remove bordas arredondadas */
+        min-height: 100vh; /* Garante altura total */
+        height: 100vh; /* Força altura total */
+        overflow: hidden; /* Evita rolagem do container principal */
     }
 
     #controls {
-        width: 100% !important; /* <<< FORÇA LARGURA TOTAL */
-        height: auto; /* Altura livre */
-        border-right: none;
-        border-bottom: 1px solid #eee;
-        max-height: none; /* Sem altura máxima por enquanto */
-        overflow: visible; /* Sem rolagem interna por enquanto */
+        width: 100%; /* Ocupa largura total */
+        height: auto; /* Altura será limitada por max-height abaixo */
+        flex-shrink: 0; /* Não deve encolher verticalmente */
+        border-right: none; /* Remove borda direita */
+        border-bottom: 1px solid #eee; /* Adiciona borda inferior separadora */
+        /* ===== ALTURA LIMITADA PARA CONTROLES (AJUSTE ESTE VALOR) ===== */
+        max-height: 45vh; /* Ex: máximo 45% da altura da tela */
+        overflow: hidden; /* Esconde overflow; rolagem será interna em #scrollable-controls */
+        /* display: flex e flex-direction: column já definidos */
+    }
+
+    /* Área superior (categorias/botão rota) deixa de ser sticky em mobile */
+    #controls #top-controls-area {
+        position: static; /* Comportamento normal de fluxo */
+        border-bottom: 1px solid #eee; /* Mantém separador visual */
+    }
+
+    /* Garante que a área rolável funcione dentro da altura limitada de #controls */
+    #controls #scrollable-controls {
+        flex-grow: 1; /* Ocupa o espaço vertical restante dentro de #controls */
+        overflow-y: auto; /* Habilita rolagem vertical APENAS nesta área */
     }
 
     #map-container {
-        width: 100% !important; /* <<< FORÇA LARGURA TOTAL */
-        height: 400px !important; /* <<< ALTURA FIXA GRANDE PARA TESTE */
-        flex-grow: 0; /* Desliga flex-grow */
+        width: 100%; /* Ocupa largura total */
+        flex-grow: 1; /* Ocupa o espaço vertical restante na coluna */
+        min-height: 0; /* Essencial para flexbox permitir encolher/esticar corretamente */
     }
 
+    /* Ocultar/Mostrar no modo mapa JÁ está definido fora da media query,
+       pois a classe .map-only-mode controlará isso independentemente do tamanho da tela. */
+}
+
+/* Opcional: Media Query para telas MUITO pequenas (<= 480px) */
+@media (max-width: 480px) {
+    #controls {
+        /* Pode precisar de um pouco mais de espaço % em telas muito estreitas */
+        max-height: 50vh;
+    }
+    #controls > h2 { font-size: 1em; padding: 10px 15px 8px 15px; }
+    .category-btn { font-size: 0.8em; padding: 6px 3px; margin-bottom: 4px;}
+    #route-found-btn { font-size: 0.85em; padding: 8px;}
+    #scrollable-controls #search-input,
+    #scrollable-controls button { font-size: 0.85em; padding: 6px; margin-bottom: 6px; }
+    #scrollable-controls #selected-locations-list li { font-size: 0.85em; padding: 5px 3px;}
+    #scrollable-controls #selected-locations-list .remove-btn { padding: 1px 5px; font-size: 0.75em;}
+
+    #back-button { top: 5px; left: 5px; padding: 6px 10px; font-size: 0.8em;} /* Menor e mais próximo do canto */
+}
+
+/* Estilos específicos do Google Maps Autocomplete (para garantir boa aparência) */
+.pac-container { /* Container da lista de sugestões */
+    z-index: 1050 !important; /* Tenta colocar acima de outros elementos */
+    background-color: #fff;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #ccc;
+    margin-top: -1px; /* Alinha com a parte inferior do input */
+    /* Limita largura para não ficar muito extenso em telas largas */
+    max-width: calc(300px - 30px); /* Largura dos controles menos padding */
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    .pac-container {
+         max-width: calc(100% - 30px); /* Largura da tela menos padding */
+    }
+}
+
+.pac-item { /* Item individual na lista */
+    padding: 8px 12px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-top: 1px solid #eee;
+}
+.pac-item:first-child { border-top: none; }
+.pac-item:hover { background-color: #f5f5f5; }
+.pac-item-query { font-weight: bold; color: #333; } /* Texto digitado */
+.pac-matched { font-weight: bold; } /* Parte correspondente */
+.pac-logo:after { /* Logo "Powered by Google" */
+   background-image: none !important; /* Esconde imagem */
+   height: auto !important; /* Altura automática */
+   padding: 5px 8px !important; /* Padding */
+   font-size: 0.7em; /* Fonte pequena */
+   content: "Sugestões do Google"; /* Texto alternativo */
+   display: block;
+   text-align: right;
+   color: #777;
+   border-top: 1px solid #eee;
 }
