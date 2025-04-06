@@ -31,21 +31,24 @@ let appContainer = null;
  * Também aciona a verificação de desvio de rota.
  * @param {GeolocationPosition} position O objeto de posição da API de Geolocalização.
  */
-function updateUserMarkerAndAccuracy(position) {
-    // ... (código desta função permanece exatamente o mesmo de antes) ...
+function updateUserMarkerAndAccuracy(position) {// --- Início do Bloco NOVO para substituir o conteúdo da função ---
+
+    console.log(">>> updateUserMarkerAndAccuracy: INÍCIO DA FUNÇÃO. Dados recebidos:", position); // MENSAGEM 1
+    
     const pos = {
         lat: position.coords.latitude,
         lng: position.coords.longitude
     };
-    const accuracy = position.coords.accuracy; // Precisão em metros
-    const heading = position.coords.heading;  // Tenta obter o heading
-
+    const accuracy = position.coords.accuracy;
+    const heading = position.coords.heading;
+    
     if (!map) {
-        console.error("Mapa não inicializado ao tentar atualizar marcador do usuário.");
-        return;
+        console.error(">>> updateUserMarkerAndAccuracy: ERRO - A variável 'map' não está definida!"); // MENSAGEM 2
+        return; // Para a execução aqui se não houver mapa
     }
-
-    // --- Atualiza Círculo de Precisão ---
+    console.log(">>> updateUserMarkerAndAccuracy: Variável 'map' OK. Verificando círculo..."); // MENSAGEM 3
+    
+    // --- Atualiza Círculo de Precisão (Código original) ---
     if (userLocationAccuracyCircle) {
         userLocationAccuracyCircle.setCenter(pos);
         userLocationAccuracyCircle.setRadius(accuracy);
@@ -56,100 +59,108 @@ function updateUserMarkerAndAccuracy(position) {
             center: pos, radius: accuracy, zIndex: 1
         });
     }
-
+    console.log(">>> updateUserMarkerAndAccuracy: Círculo OK. Preparando ícone da seta..."); // MENSAGEM 4
+    
     // --- Cria ou Atualiza MARCADOR DE SETA ---
     let iconConfig = {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, // Define a forma da seta
-        fillColor: '#1a73e8',      // Cor da seta
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        fillColor: '#1a73e8',
         fillOpacity: 1,
-        strokeColor: '#ffffff',      // Cor da borda
+        strokeColor: '#ffffff',
         strokeWeight: 2,
-        scale: 6,                   // Tamanho da seta
-        anchor: new google.maps.Point(0, 2), // Ponto de ancoragem ajustado para centralizar
-        rotation: 0                 // Rotação inicial
+        scale: 6,
+        anchor: new google.maps.Point(0, 2),
+        rotation: 0
     };
-
-    // Aplica rotação se heading for válido
+    
     if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
         iconConfig.rotation = heading;
+        console.log(`>>> updateUserMarkerAndAccuracy: Usando rotação ${heading} para a seta.`); // MENSAGEM 5a
     } else {
-        // console.log("Heading não disponível ou inválido."); // Log opcional
+        console.log(">>> updateUserMarkerAndAccuracy: Sem rotação válida para a seta."); // MENSAGEM 5b
     }
-
-    // Atualiza ou cria o marcador
+    
+    // Atualiza ou cria o marcador (seta azul)
     if (userLocationMarker) {
-        userLocationMarker.setPosition(pos);
-        userLocationMarker.setIcon(iconConfig); // Atualiza o ícone (com nova rotação/posição)
+        // Se a seta JÁ EXISTE, apenas atualiza a posição e o ícone (rotação)
+        console.log(">>> updateUserMarkerAndAccuracy: Atualizando seta existente..."); // MENSAGEM 6a
+        try {
+             userLocationMarker.setPosition(pos);
+             userLocationMarker.setIcon(iconConfig);
+             console.log(">>> updateUserMarkerAndAccuracy: Seta existente ATUALIZADA."); // MENSAGEM 6b
+        } catch (updateError) {
+             console.error("!!! ERRO ao ATUALIZAR seta:", updateError); // MENSAGEM DE ERRO NA ATUALIZAÇÃO
+        }
     } else {
-        userLocationMarker = new google.maps.Marker({
-            position: pos,
-            map: map,
-            title: 'Sua localização atual',
-            icon: iconConfig, // Usa o ícone de seta na criação
-            zIndex: 2
-        });
-        console.log("Marcador de seta da localização do usuário criado.");
-        // Só centraliza e ajusta zoom na primeira vez que o marcador é criado
-        // (Evita recentralizar a cada movimento se o usuário mexeu no mapa)
-        // map.setCenter(pos);
-        // map.setZoom(16);
+        // Se a seta NÃO EXISTE, cria uma nova
+        console.log(">>> updateUserMarkerAndAccuracy: Criando NOVA seta..."); // MENSAGEM 7a
+        try {
+             userLocationMarker = new google.maps.Marker({
+                 position: pos,
+                 map: map, // Adiciona ao mapa
+                 title: 'Sua localização atual',
+                 icon: iconConfig, // Usa o ícone de seta
+                 zIndex: 2 // Garante que fique acima do círculo
+             });
+             console.log(">>> updateUserMarkerAndAccuracy: NOVA seta CRIADA com sucesso."); // MENSAGEM 7b
+        } catch (createError) {
+             console.error("!!! ERRO ao CRIAR nova seta:", createError); // MENSAGEM DE ERRO NA CRIAÇÃO
+        }
     }
-
-    // --- Atualiza Variável Global ---
+    
+    // --- Atualiza Variável Global (só depois de tratar o marcador) ---
     currentUserLocation = pos;
-
-    // --- Lógica de Verificação de Desvio de Rota (permanece igual) ---
+    console.log(">>> updateUserMarkerAndAccuracy: Variável currentUserLocation atualizada."); // MENSAGEM 8
+    
+    
+    // --- Lógica de Verificação de Desvio de Rota (Código original, apenas adicionado log no final) ---
     if (currentRouteResult && !isRecalculating && currentUserLocation) {
         let routePath = [];
         currentRouteResult.routes[0].legs.forEach(leg => { leg.steps.forEach(step => { routePath = routePath.concat(step.path); }); });
         const routePolyline = new google.maps.Polyline({ path: routePath });
-
-        // Verifica se a localização atual está na rota (ou próxima o suficiente)
-        if (google.maps.geometry && google.maps.geometry.poly) { // Checa se a biblioteca geometry está carregada
+    
+        if (google.maps.geometry && google.maps.geometry.poly) {
              const isOnRoute = google.maps.geometry.poly.isLocationOnEdge(
                 currentUserLocation,
                 routePolyline,
-                ROUTE_DEVIATION_TOLERANCE / 100000 // Tolerância precisa ser convertida para graus (aproximado)
-                                                // Ajuste este fator se necessário, ou use uma biblioteca
-                                                // mais robusta para distância ponto-polilinha em metros.
+                ROUTE_DEVIATION_TOLERANCE / 100000
              );
-
+    
             if (!isOnRoute) {
-                console.warn(`Usuário fora da rota (${ROUTE_DEVIATION_TOLERANCE}m). Recalculando...`);
+                console.warn(`>>> updateUserMarkerAndAccuracy: Usuário fora da rota (${ROUTE_DEVIATION_TOLERANCE}m). Recalculando...`);
                 isRecalculating = true;
-                // Prepara a nova requisição de rota usando a localização atual como origem
-                 const waypointsOriginal = currentRouteRequest.waypoints || []; // Pega waypoints originais
+                 const waypointsOriginal = currentRouteRequest.waypoints || [];
                  const newRequest = {
                      origin: currentUserLocation,
                      destination: currentRouteRequest.destination,
-                     waypoints: waypointsOriginal, // Mantém os waypoints intermediários
+                     waypoints: waypointsOriginal,
                      optimizeWaypoints: currentRouteRequest.optimizeWaypoints,
                      travelMode: currentRouteRequest.travelMode
                  };
-
-                console.log("Nova requisição para recálculo:", newRequest);
+    
+                console.log(">>> updateUserMarkerAndAccuracy: Nova requisição para recálculo:", newRequest);
                 directionsService.route(newRequest, (newResult, status) => {
                     if (status === google.maps.DirectionsStatus.OK) {
-                        console.log("Rota recalculada com sucesso!");
+                        console.log(">>> updateUserMarkerAndAccuracy: Rota recalculada com sucesso!");
                         directionsRenderer.setDirections(newResult);
-                        currentRouteResult = newResult; // Atualiza a rota atual
-                        currentRouteRequest = newRequest; // Atualiza a requisição atual
+                        currentRouteResult = newResult;
+                        currentRouteRequest = newRequest;
                     } else {
-                        console.error("Erro ao recalcular rota:", status);
-                        // Considerar o que fazer em caso de erro (manter rota antiga? limpar?)
+                        console.error(">>> updateUserMarkerAndAccuracy: Erro ao recalcular rota:", status);
                     }
-                    // Libera a flag após um tempo para evitar recálculos excessivos
                     setTimeout(() => {
                          isRecalculating = false;
-                         console.log("Flag de recálculo liberada.");
-                    }, 5000); // Espera 5 segundos
+                         console.log(">>> updateUserMarkerAndAccuracy: Flag de recálculo liberada.");
+                    }, 5000);
                 });
             }
         } else {
-            console.warn("Biblioteca 'geometry' do Google Maps não carregada, verificação de desvio pulada.");
+            console.warn(">>> updateUserMarkerAndAccuracy: Biblioteca 'geometry' não carregada, verificação de desvio pulada.");
         }
     }
-    // --- FIM Lógica de Verificação de Desvio ---
+    console.log(">>> updateUserMarkerAndAccuracy: FIM DA FUNÇÃO."); // MENSAGEM 9
+    
+    // --- Fim do Bloco NOVO ---
 }
 
 
