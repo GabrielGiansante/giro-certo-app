@@ -243,36 +243,35 @@ function initializeMapWithCoords(coords, zoomLevel) {
          loadingMessage.remove();
      }
 
-    try {
-        map = new google.maps.Map(mapDiv, { // Passa o map-container
+     try {
+        console.log("Tentando criar new google.maps.Map..."); // LOG 1
+        map = new google.maps.Map(mapDiv, {
             center: coords,
             zoom: zoomLevel,
-            mapId: "DEMO_MAP_ID", // Use sua Map ID se tiver
-            // Opcional: desabilitar alguns controles padrão se quiser interface mais limpa
-            // disableDefaultUI: true,
-            // zoomControl: true,
-            // mapTypeControl: false,
-            // scaleControl: true,
-            // streetViewControl: false,
-            // rotateControl: false,
-            // fullscreenControl: false
+            mapId: "DEMO_MAP_ID",
         });
-
+        console.log("...Mapa criado OK. Tentando criar PlacesService..."); // LOG 2
+    
         placesService = new google.maps.places.PlacesService(map);
+        console.log("...PlacesService criado OK. Tentando criar DirectionsService..."); // LOG 3
+    
         directionsService = new google.maps.DirectionsService();
+        console.log("...DirectionsService criado OK. Tentando criar DirectionsRenderer..."); // LOG 4
+    
         directionsRenderer = new google.maps.DirectionsRenderer({
-             map: map, // Associa ao mapa
-             suppressMarkers: false // Mostra marcadores A e B padrão da rota (pode mudar para true se quiser usar os seus)
+             map: map,
+             suppressMarkers: false
         });
-
-        console.log("Mapa e serviços do Google Maps prontos.");
-
-        // Chama a configuração dos listeners APÓS o mapa estar pronto
-        setupEventListeners();
-
+        console.log("...DirectionsRenderer criado OK."); // LOG 5
+    
+        console.log("Mapa e serviços do Google Maps prontos."); // LOG FINAL (Original)
+        setupEventListeners(); // Chama a configuração dos listeners
+    
     } catch (error) {
-        console.error("ERRO ao inicializar o Google Maps:", error);
-        mapDiv.innerHTML = `<p style="color: red; padding: 20px;">Erro ao carregar o mapa: ${error.message}. Verifique a chave da API e a conexão.</p>`;
+        console.error("!!! ERRO DENTRO DO TRY de initializeMapWithCoords:", error); // LOG DE ERRO
+        if (mapDiv) { // Tenta exibir erro no HTML se possível
+             mapDiv.innerHTML = `<p style="color: red; padding: 20px; font-weight: bold;">ERRO ao inicializar mapa/serviços: ${error.message}. Verifique console e APIs habilitadas.</p>`;
+        }
     }
 }
 
