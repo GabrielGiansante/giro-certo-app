@@ -193,3 +193,36 @@ body {
     align-items: center; justify-content: center; background-color: #e9e9e9;
 }
 #map-container p { color: #666; }
+/* =============================================== */
+/* === Media Queries para Telas Pequenas === */
+/* =============================================== */
+
+/* Aplica estes estilos quando a largura da tela for 768px ou menor */
+/* =============================================== */
+/* === Media Queries para Telas Pequenas === */
+/* =============================================== */
+
+/* Aplica estes estilos quando a largura da tela for 768px ou menor */
+@media (max-width: 768px) {
+
+    #app-container {
+        flex-direction: column !important; /* <<< FORÇA A COLUNA */
+        height: auto; /* Deixa altura livre por enquanto */
+    }
+
+    #controls {
+        width: 100% !important; /* <<< FORÇA LARGURA TOTAL */
+        height: auto; /* Altura livre */
+        border-right: none;
+        border-bottom: 1px solid #eee;
+        max-height: none; /* Sem altura máxima por enquanto */
+        overflow: visible; /* Sem rolagem interna por enquanto */
+    }
+
+    #map-container {
+        width: 100% !important; /* <<< FORÇA LARGURA TOTAL */
+        height: 400px !important; /* <<< ALTURA FIXA GRANDE PARA TESTE */
+        flex-grow: 0; /* Desliga flex-grow */
+    }
+
+}
