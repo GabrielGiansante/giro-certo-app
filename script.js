@@ -208,13 +208,32 @@ function initMap() {
 
                 // 2. Inicia o MONITORAMENTO CONTÍNUO (watchPosition)
                 if (watchId === null) {
-                    console.log("Iniciando monitoramento contínuo (watchPosition)...");
-                    watchId = navigator.geolocation.watchPosition(
-                        (newPosition) => { updateUserMarkerAndAccuracy(newPosition); }, // Atualiza marcador/círculo/verifica desvio
-                        (error) => { handleLocationError(error, true); }, // Handler de erro (isWatching = true)
-                        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 } // Opções
-                    );
-                    console.log("Monitoramento iniciado com watchId:", watchId);
+                    // --- Início do Bloco NOVO if/else para substituir o antigo ---
+
+if (watchId === null) {
+    console.log(">>> initMap: watchId é null, tentando iniciar watchPosition..."); // Log Antes
+    watchId = navigator.geolocation.watchPosition(
+        (newPosition) => {
+            // Callback de SUCESSO do watchPosition
+            console.log("--- watchPosition Callback: Sucesso! Nova posição recebida."); // Log Sucesso
+            updateUserMarkerAndAccuracy(newPosition); // Chama a função que desenha a seta
+        },
+        (error) => {
+            // Callback de ERRO do watchPosition
+            console.error("!!! watchPosition Callback: ERRO recebido:", error); // Log Erro
+            handleLocationError(error, true); // Chama a função que trata o erro
+        },
+        // Opções do watchPosition
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+    // Log DEPOIS de chamar watchPosition
+    console.log(`>>> initMap: navigator.geolocation.watchPosition chamado. watchId resultante: ${watchId}`); // Log Depois
+} else {
+    // Se watchId NÃO for null
+    console.warn(`>>> initMap: watchPosition NÃO iniciado, pois watchId já existe (${watchId}).`); // Log Já Ativo
+}
+
+// --- Fim do Bloco NOVO if/else ---
                 }
             },
             (error) => { // ERRO ao obter posição inicial
