@@ -288,17 +288,26 @@ function setupEventListeners() {
     const searchInput = document.getElementById('search-input');
     const addLocationBtn = document.getElementById('add-location-btn');
     const selectedLocationsList = document.getElementById('selected-locations-list');
-    const calculateRouteBtn = document.getElementById('calculate-route-btn');
-    const tourBarsNearbyBtn = document.getElementById('tour-bars-nearby-btn');
+    
+    
     const categoryButtons = document.querySelectorAll('.category-btn');
     const routeFoundBtn = document.getElementById('route-found-btn');
 
     // Verifica elementos essenciais
-    if (!appContainer || !searchInput || !addLocationBtn || !selectedLocationsList || !calculateRouteBtn || !tourBarsNearbyBtn || !categoryButtons.length || !routeFoundBtn) {
-        console.error('ERRO: Um ou mais elementos essenciais da interface não foram encontrados! Verifique os IDs no HTML.');
-        // Não prosseguir se elementos básicos faltarem
-        return;
-    }
+   // Verifica elementos essenciais (COM LOG DETALHADO)
+let missingElement = null;
+if (!appContainer) missingElement = '#app-container';
+else if (!searchInput) missingElement = '#search-input';
+else if (!addLocationBtn) missingElement = '#add-location-btn';
+else if (!selectedLocationsList) missingElement = '#selected-locations-list';
+else if (!categoryButtons || categoryButtons.length === 0) missingElement = '.category-btn (querySelectorAll)'; // Verifica se a lista está vazia
+else if (!routeFoundBtn) missingElement = '#route-found-btn';
+
+if (missingElement) {
+    console.error(`ERRO: Elemento essencial "${missingElement}" não encontrado no HTML! Verifique o ID/Classe.`);
+    // Você pode adicionar um 'return;' aqui se quiser parar a execução
+    // return;
+}
      // Verifica o botão Voltar separadamente, pois ele pode não ter sido adicionado ainda
      if (!backButton) {
          console.warn("AVISO: Botão #back-button não encontrado no HTML. Funcionalidade 'Voltar' do modo mapa não funcionará.");
@@ -630,63 +639,7 @@ function setupEventListeners() {
     });
 
     // Botão CALCULAR Rota Manualmente (Locais da Lista)
-    calculateRouteBtn.addEventListener('click', function() {
-        if (markers.length < 2) { alert("Adicione pelo menos 2 locais à lista."); return; }
-        if (!directionsService || !directionsRenderer) { alert("Serviço de rotas não pronto."); return; }
-
-        console.log("Calculando rota manual...");
-        directionsRenderer.setDirections({ routes: [] }); // Limpa rota anterior
-        currentRouteResult = null; // Limpa dados da rota antiga
-        currentRouteRequest = null; // Limpa requisição antiga
-
-        // Prepara waypoints (todos exceto o primeiro e o último)
-        const waypoints = markers.slice(1, -1).map(item => ({
-            location: item.marker.getPosition(), // Usa a posição do marcador guardado
-            stopover: true
-        }));
-        const origin = markers[0].marker.getPosition(); // Posição do primeiro marcador
-        const destination = markers[markers.length - 1].marker.getPosition(); // Posição do último
-
-        const request = {
-            origin: origin,
-            destination: destination,
-            waypoints: waypoints,
-            optimizeWaypoints: true, // Otimiza ordem das paradas
-            travelMode: google.maps.TravelMode.DRIVING
-        };
-        console.log("Requisição rota manual:", request);
-
-        directionsService.route(request, (result, status) => {
-            if (status === google.maps.DirectionsStatus.OK) {
-                console.log("Rota manual calculada OK:", result);
-                directionsRenderer.setDirections(result);
-                // DECISÃO: Entrar no modo mapa também para rota manual?
-                // Se sim, descomente as linhas abaixo e ajuste se necessário
-                 /*
-                 currentRouteResult = result; // Guarda para possível recálculo
-                 currentRouteRequest = request;
-                 isRecalculating = false;
-                 if (appContainer) {
-                     appContainer.classList.add('map-only-mode');
-                     console.log("Entrando no Modo Mapa (Rota Manual).");
-                     setTimeout(() => {
-                         if (map) {
-                             google.maps.event.trigger(map, 'resize');
-                             if (result.routes && result.routes[0] && result.routes[0].bounds) {
-                                  map.fitBounds(result.routes[0].bounds);
-                             }
-                             console.log("Mapa redimensionado para Modo Mapa.");
-                         }
-                     }, 350);
-                 }
-                 */
-
-            } else {
-                console.error('Erro ao calcular rota manual: ' + status);
-                alert('Erro ao calcular rota manual: ' + status);
-            }
-        });
-    });
+    
 
     // Listener para Remover Item da Lista Manual
     selectedLocationsList.addEventListener('click', function(event) {
@@ -723,13 +676,7 @@ function setupEventListeners() {
         }
     });
 
-    // Botão "Iniciar Tour Próximo" (Ainda como Placeholder)
-    tourBarsNearbyBtn.addEventListener('click', function() {
-        alert("Funcionalidade 'Iniciar Tour Próximo' ainda não implementada.");
-        console.log("Botão 'Tour Próximo' clicado (não implementado).");
-        // Aqui você colocaria a lógica para buscar bares próximos E traçar uma rota entre eles
-    });
-
+    
     // --- NOVO: Listener para o Botão Voltar ---
     if (backButton && appContainer) {
         backButton.addEventListener('click', () => {
