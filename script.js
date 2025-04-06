@@ -510,6 +510,7 @@ if (missingElement) {
     // Botão "Traçar Rota" (para locais encontrados na BUSCA por categoria)
         // Botão "Traçar Rota" (para locais encontrados na BUSCA por categoria)
         routeFoundBtn.addEventListener('click', function() {
+            alert(`Tentando traçar rota com ${foundMarkers.length} locais encontrados.`);
             console.log(`>>> [Traçar Rota Clicado] Número de foundMarkers: ${foundMarkers.length}`);
 
             // Condições iniciais
