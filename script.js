@@ -510,6 +510,8 @@ if (missingElement) {
     // Botão "Traçar Rota" (para locais encontrados na BUSCA por categoria)
         // Botão "Traçar Rota" (para locais encontrados na BUSCA por categoria)
         routeFoundBtn.addEventListener('click', function() {
+            console.log(`>>> [Traçar Rota Clicado] Número de foundMarkers: ${foundMarkers.length}`);
+
             // Condições iniciais
             if (!directionsService || !directionsRenderer) {
                 alert("Serviço de rotas não pronto. Aguarde ou recarregue.");
@@ -546,21 +548,41 @@ if (missingElement) {
                         console.log("Calculando rota da localização atual para locais encontrados...");
                         directionsRenderer.setDirections({ routes: [] }); // Limpa rota anterior
     
-                        const waypoints = foundMarkers.map(marker => ({
-                            location: marker.getPosition(),
-                            stopover: true
-                        }));
-    
-                        let originPoint = userPos; // Usa a localização recém-obtida
-                        let destinationPoint;
-                        let waypointsForRequest = [];
-    
-                        if (waypoints.length === 1) {
-                            destinationPoint = waypoints[0].location;
-                        } else {
-                            destinationPoint = waypoints[waypoints.length - 1].location;
-                            waypointsForRequest = waypoints.slice(0, -1);
-                        }
+                        // --- Bloco NOVO que substitui o anterior ---
+
+// --- LIMITA O NÚMERO DE WAYPOINTS ---
+const MAX_ALLOWED_WAYPOINTS = 10; // Limite seguro (ajuste se necessário, máx 23 geralmente)
+
+// Pega no máximo MAX_ALLOWED_WAYPOINTS + 1 marcadores (para ter o destino)
+const markersForRoute = foundMarkers.slice(0, MAX_ALLOWED_WAYPOINTS + 1);
+console.log(`Limitando a rota para ${markersForRoute.length} locais encontrados (máx ${MAX_ALLOWED_WAYPOINTS + 1}).`);
+
+const waypointsLimited = markersForRoute.map(marker => ({
+    location: marker.getPosition(),
+    stopover: true
+}));
+// ---------------------------------------
+
+let originPoint = userPos; // Usa a localização recém-obtida
+let destinationPoint;
+let waypointsForRequest = [];
+
+if (waypointsLimited.length === 0) {
+     // Isso não deveria acontecer por causa da verificação no início, mas por segurança:
+     alert("Nenhum marcador válido para rota após limitação.");
+     this.disabled = false; this.textContent = "Traçar Rota"; return;
+} else if (waypointsLimited.length === 1) {
+    // Se só sobrou 1 marcador (ou começou com 1), ele é o destino
+    destinationPoint = waypointsLimited[0].location;
+    // waypointsForRequest continua vazio []
+} else {
+    // O último dos limitados é o destino
+    destinationPoint = waypointsLimited[waypointsLimited.length - 1].location;
+    // Os outros limitados (todos menos o último) são os waypoints intermediários
+    waypointsForRequest = waypointsLimited.slice(0, -1);
+}
+
+// --- Fim do Bloco NOVO ---
     
                         const request = {
                             origin: originPoint,
