@@ -23,13 +23,25 @@ let selectedPlaceData = null;
 // Referência ao container principal (para modo mapa)
 let appContainer = null;
 
-// --- Reset Inicial do Watcher (Verifica se existe e limpa antes de initMap) ---
+// Bloco NOVO (Reset Garantido com try-catch e log final)
+// --- Reset Inicial do Watcher (GARANTIDO) ---
 if (navigator.geolocation && typeof watchId !== 'undefined' && watchId !== null) {
-    console.log("Limpando watchId existente ANTES de initMap:", watchId);
-    navigator.geolocation.clearWatch(watchId);
+    console.log(">>> Reset Inicial: Tentando limpar watchId pré-existente:", watchId);
+    try { // Adiciona try-catch para clearWatch
+         navigator.geolocation.clearWatch(watchId);
+         console.log(">>> Reset Inicial: clearWatch executado para watchId:", watchId);
+    } catch (e) {
+         console.error(">>> Reset Inicial: Erro ao executar clearWatch:", e);
+    }
+    watchId = null; // Define como null DEPOIS de tentar limpar
+} else {
+    console.log(">>> Reset Inicial: Nenhum watchId pré-existente ou inválido encontrado para limpar.");
+    watchId = null; // Garante que seja null se não entrou no if
 }
-watchId = null; // Garante que watchId comece como null ao carregar o script
-// -----------------------------------------
+// Garante que watchId seja ABSOLUTAMENTE null ao iniciar o script, independentemente do que aconteceu acima
+watchId = null;
+console.log(">>> Reset Inicial: Estado final GARANTIDO de watchId:", watchId);
+// --------------------------------------------
 
 /**
  * Cria ou atualiza o marcador de seta e círculo de precisão do usuário.
@@ -588,21 +600,50 @@ function setupEventListeners() {
 /**
  * Limpa marcadores encontrados e rota associada.
  */
+// Bloco NOVO para o conteúdo da função clearFoundMarkers
 function clearFoundMarkers() {
-    console.log(`Limpando ${foundMarkers.length} marcadores encontrados.`);
-    if (foundMarkers && foundMarkers.length > 0) { // Verifica se array existe e tem itens
-         foundMarkers.forEach(marker => {
-              if (marker && typeof marker.setMap === 'function') { // Verifica se é um marcador válido
-                   marker.setMap(null);
-              }
-         });
+    console.log(`>>> clearFoundMarkers: Iniciando limpeza. ${foundMarkers ? `Array existe com ${foundMarkers.length} itens.` : 'Array é undefined/null.'}`);
+
+    // Verifica se 'foundMarkers' é realmente um array antes de tentar acessar 'length' ou 'forEach'
+    if (foundMarkers && Array.isArray(foundMarkers)) {
+        if (foundMarkers.length > 0) {
+             console.log(`>>> clearFoundMarkers: Removendo ${foundMarkers.length} marcadores do mapa...`);
+             try { // Adiciona try-catch para a remoção
+                  foundMarkers.forEach((marker, index) => {
+                       // Verifica se o item é um marcador válido antes de chamar setMap
+                       if (marker && typeof marker.setMap === 'function') {
+                            marker.setMap(null);
+                       } else {
+                            console.warn(`>>> clearFoundMarkers: Item no índice ${index} não é um marcador válido ou não tem setMap.`);
+                       }
+                  });
+                  console.log(`>>> clearFoundMarkers: Marcadores removidos do mapa.`);
+             } catch (e) {
+                  console.error(`>>> clearFoundMarkers: Erro durante forEach/setMap(null):`, e);
+             }
+             // Tenta zerar o array usando length = 0 APÓS remover do mapa
+             try {
+                  foundMarkers.length = 0;
+                  console.log(`>>> clearFoundMarkers: Array 'foundMarkers' zerado via length (length atual: ${foundMarkers.length}).`);
+             } catch (e) {
+                  console.error(`>>> clearFoundMarkers: Erro ao tentar zerar array com length = 0:`, e);
+                  console.log(`>>> clearFoundMarkers: Tentando resetar com 'foundMarkers = [];' como fallback.`);
+                  foundMarkers = []; // Fallback se length=0 falhar
+             }
+        } else {
+             console.log(">>> clearFoundMarkers: Array 'foundMarkers' já estava vazio (length 0).");
+        }
+    } else {
+        console.warn(">>> clearFoundMarkers: 'foundMarkers' não é um array válido. Resetando para [].");
+        foundMarkers = []; // Garante que seja um array vazio se era inválido
     }
-    foundMarkers = []; // Recria o array como vazio - GARANTE LIMPEZA
+
+    // Limpa outros estados relacionados
     currentRouteResult = null;
     currentRouteRequest = null;
     if (routeFoundBtn) { routeFoundBtn.disabled = true; }
     if (directionsRenderer) { directionsRenderer.setDirections({ routes: [] }); }
-    console.log("clearFoundMarkers: Limpeza concluída."); // Log final da função
+    console.log(">>> clearFoundMarkers: Limpeza de rota/botão concluída. Estado final de foundMarkers:", foundMarkers); // Log final
 }
 
 
