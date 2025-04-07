@@ -39,8 +39,9 @@ console.log(">>> Script Init: Variáveis globais resetadas (marcador, círculo, 
 /**
  * Cria/Atualiza o marcador de seta e círculo de precisão do usuário.
  */
+// Bloco NOVO para updateUserMarkerAndAccuracy (com espera 'idle')
 function updateUserMarkerAndAccuracy(position) {
-    console.log(">>> updateUserMarkerAndAccuracy: INÍCIO. Coords:", position ? position.coords.latitude : 'null', position ? position.coords.longitude : 'null');
+    console.log(">>> updateUserMarkerAndAccuracy: INÍCIO. Verificando posição...");
 
     if (!position || !position.coords) {
          console.warn(">>> updateUserMarkerAndAccuracy: Posição inválida. Abortando."); return;
@@ -49,62 +50,76 @@ function updateUserMarkerAndAccuracy(position) {
     const accuracy = position.coords.accuracy;
     const heading = position.coords.heading;
 
+    // Verifica se a variável 'map' existe
     if (!map || typeof map.setCenter !== 'function') {
-        console.error(">>> updateUserMarkerAndAccuracy: ERRO - Mapa inválido!"); return;
+        console.error(">>> updateUserMarkerAndAccuracy: ERRO - Variável 'map' inválida ou não inicializada!"); return;
     }
+    console.log(">>> updateUserMarkerAndAccuracy: Variável 'map' OK. Verificando se mapa está 'idle'...");
 
-    // Círculo de Precisão
-    try {
-        if (userLocationAccuracyCircle) {
-            userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
-        } else {
-            userLocationAccuracyCircle = new google.maps.Circle({ map: map, center: pos, radius: accuracy, /*...estilos...*/ zIndex: 1 });
-        }
-        console.log(">>> updateUserMarkerAndAccuracy: Círculo OK.");
-    } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
+    // --- VERIFICAÇÃO E ESPERA PELO EVENTO 'IDLE' DO MAPA ---
+    // O evento 'idle' garante que o mapa terminou de carregar/mover/zoomear
+    // Isso pode ajudar se a função for chamada antes do mapa estar 100% pronto após recarregar
 
-    // Marcador de Seta
-    // Bloco NOVO (Seta Azul Original Restaurada)
-// --- Marcador de Seta ---
-let iconConfig = {
-    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, // <<< Caminho da seta
-    fillColor: '#1a73e8',      // Cor azul
-    fillOpacity: 1,
-    strokeColor: '#ffffff',      // Borda branca
-    strokeWeight: 2,
-    scale: 6,                   // Tamanho
-    anchor: new google.maps.Point(0, 2.5), // Ponto de ancoragem (ajustei para 2.5, pode voltar a 2 se preferir)
-    rotation: 0                 // Rotação inicial
-};
-console.log(">>> updateUserMarkerAndAccuracy: Usando ícone de SETA AZUL."); // Log de confirmação
+    // Define a função que realmente atualiza o marcador
+    const doMarkerUpdate = () => {
+        console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Mapa está 'idle'. Atualizando círculo e marcador...");
 
-// Restaura a lógica de rotação baseada no heading
-if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
-    iconConfig.rotation = heading;
-    console.log(`>>> updateUserMarkerAndAccuracy: Aplicando rotação ${heading} para a seta.`);
-} else {
-    console.log(">>> updateUserMarkerAndAccuracy: Sem rotação válida para a seta.");
+        // --- Círculo de Precisão ---
+        try {
+            if (userLocationAccuracyCircle) {
+                userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
+            } else {
+                userLocationAccuracyCircle = new google.maps.Circle({ map: map, center: pos, radius: accuracy, /*...estilos...*/ zIndex: 1 });
+            }
+            console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Círculo OK.");
+        } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
+
+        // --- Marcador de Seta ---
+        console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Preparando ícone da seta...");
+        let iconConfig = { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, /*...estilos...*/ rotation: 0 };
+        if (heading !== null && !isNaN(heading) && typeof heading === 'number') { iconConfig.rotation = heading; }
+
+        try {
+            if (userLocationMarker) {
+                console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Atualizando seta existente...");
+                userLocationMarker.setPosition(pos); userLocationMarker.setIcon(iconConfig);
+                if(userLocationMarker.getMap() == null) { userLocationMarker.setMap(map); console.warn(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Marcador estava fora, readicionado."); }
+                console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Seta ATUALIZADA.");
+            } else {
+                console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Criando NOVA seta...");
+                userLocationMarker = new google.maps.Marker({ position: pos, map: map, title: 'Sua localização', icon: iconConfig, zIndex: 2 });
+                console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): NOVA seta CRIADA.");
+            }
+        } catch (markerError) { console.error("!!! ERRO Marcador/Seta:", markerError); userLocationMarker = null; }
+
+        currentUserLocation = pos; // Atualiza localização global
+        console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): FIM.");
+    }; // Fim da função doMarkerUpdate
+
+    // Verifica se o mapa já está 'idle' (usando uma propriedade interna - não oficial, mas comum)
+    // Ou se o 'getBounds' retorna algo (indicando que o mapa tem dimensões)
+    if (map.__gm && map.__gm.map && map.__gm.map.getMapTypeId() && map.getBounds()) { // Tenta verificar se já está pronto
+         console.log(">>> updateUserMarkerAndAccuracy: Mapa parece já estar 'idle' ou pronto. Executando update diretamente.");
+         doMarkerUpdate(); // Executa imediatamente
+    } else {
+         // Se não parece pronto, espera pelo evento 'idle' UMA VEZ
+         console.warn(">>> updateUserMarkerAndAccuracy: Mapa não parece 'idle'. Aguardando evento 'idle'...");
+         google.maps.event.addListenerOnce(map, 'idle', () => {
+              console.log(">>> updateUserMarkerAndAccuracy: Evento 'idle' disparado!");
+              doMarkerUpdate(); // Executa quando o mapa ficar pronto
+         });
+         // Timeout de segurança: se 'idle' não disparar em X segundos, tenta mesmo assim
+         setTimeout(() => {
+              if (!userLocationMarker || userLocationMarker.getMap() === null) { // Só tenta se o marcador ainda não foi criado/adicionado
+                   console.warn(">>> updateUserMarkerAndAccuracy: Timeout de segurança (5s) atingido após esperar 'idle'. Tentando update mesmo assim...");
+                   doMarkerUpdate();
+              }
+         }, 5000); // Espera 5 segundos no máximo
+    }
+    // A função principal termina aqui, o update real acontece dentro de doMarkerUpdate (imediatamente ou após 'idle')
+    console.log(">>> updateUserMarkerAndAccuracy: Lógica principal concluída (update pode estar aguardando 'idle').");
 }
 // --- Fim do Bloco NOVO ---
-    if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
-        iconConfig.rotation = heading;
-    }
-    try {
-        if (userLocationMarker) {
-            console.log(">>> updateUserMarkerAndAccuracy: Atualizando seta existente...");
-            userLocationMarker.setPosition(pos); userLocationMarker.setIcon(iconConfig);
-            if(userLocationMarker.getMap() == null) { userLocationMarker.setMap(map); console.warn(">>> updateUserMarkerAndAccuracy: Marcador estava fora do mapa, readicionado."); }
-            console.log(">>> updateUserMarkerAndAccuracy: Seta ATUALIZADA.");
-        } else {
-            console.log(">>> updateUserMarkerAndAccuracy: Criando NOVA seta...");
-            userLocationMarker = new google.maps.Marker({ position: pos, map: map, title: 'Sua localização', icon: iconConfig, zIndex: 2 });
-            console.log(">>> updateUserMarkerAndAccuracy: NOVA seta CRIADA.");
-        }
-    } catch (markerError) { console.error("!!! ERRO Marcador/Seta:", markerError); userLocationMarker = null; }
-
-    currentUserLocation = pos;
-    console.log(">>> updateUserMarkerAndAccuracy: FIM.");
-}
 
 /**
  * Lida com erros da API de Geolocalização.
