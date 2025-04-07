@@ -213,11 +213,17 @@ function initMap() {
 if (watchId === null) {
     console.log(">>> initMap: watchId é null, tentando iniciar watchPosition..."); // Log Antes
     watchId = navigator.geolocation.watchPosition(
-        (newPosition) => {
-            // Callback de SUCESSO do watchPosition
-            console.log("--- watchPosition Callback: Sucesso! Nova posição recebida."); // Log Sucesso
-            updateUserMarkerAndAccuracy(newPosition); // Chama a função que desenha a seta
-        },
+        // Bloco NOVO para substituir o anterior
+(newPosition) => {
+    // Callback de SUCESSO do watchPosition
+    console.log("--- watchPosition Callback: Sucesso! Dados recebidos:", newPosition); // Log com dados
+    if (newPosition && newPosition.coords) { // Verifica se a posição e as coordenadas são válidas
+        console.log("--- watchPosition Callback: Posição válida, chamando updateUserMarkerAndAccuracy.");
+        updateUserMarkerAndAccuracy(newPosition); // Chama a função que desenha a seta
+    } else {
+        console.warn("--- watchPosition Callback: Recebeu nova posição, mas dados inválidos ou incompletos.", newPosition);
+    }
+}, // <-- A vírgula final permanece, pois separa do callback de erro
         (error) => {
             // Callback de ERRO do watchPosition
             console.error("!!! watchPosition Callback: ERRO recebido:", error); // Log Erro
@@ -437,7 +443,9 @@ if (missingElement) {
     function clearFoundMarkers() {
         console.log(`Limpando ${foundMarkers.length} marcadores encontrados.`);
         foundMarkers.forEach(marker => marker.setMap(null));
-        foundMarkers.length = 0; // Limpa o array
+        // Linha NOVA para substituir a anterior
+foundMarkers = []; // Recria o array como vazio
+
         currentRouteResult = null; // Limpa rota associada à busca
         currentRouteRequest = null;
         if (routeFoundBtn) { routeFoundBtn.disabled = true; } // Desabilita botão
