@@ -64,21 +64,28 @@ function updateUserMarkerAndAccuracy(position) {
     } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
 
     // Marcador de Seta
-    // --- Marcador de Círculo Simples (Teste) ---
+    // Bloco NOVO (Seta Azul Original Restaurada)
+// --- Marcador de Seta ---
 let iconConfig = {
-    path: google.maps.SymbolPath.CIRCLE, // Usa um círculo simples
+    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, // <<< Caminho da seta
     fillColor: '#1a73e8',      // Cor azul
     fillOpacity: 1,
     strokeColor: '#ffffff',      // Borda branca
-    strokeWeight: 1,
-    scale: 7                    // Tamanho do círculo
-    // Sem 'anchor' ou 'rotation' necessários para círculo simples
+    strokeWeight: 2,
+    scale: 6,                   // Tamanho
+    anchor: new google.maps.Point(0, 2.5), // Ponto de ancoragem (ajustei para 2.5, pode voltar a 2 se preferir)
+    rotation: 0                 // Rotação inicial
 };
-console.log(">>> updateUserMarkerAndAccuracy: Usando ícone de CÍRCULO SIMPLES para teste.");
-// Removemos a lógica de rotação por enquanto, já que é um círculo
-// if (heading !== null && ...) { ... } else { ... }
+console.log(">>> updateUserMarkerAndAccuracy: Usando ícone de SETA AZUL."); // Log de confirmação
 
-// O código abaixo que cria/atualiza o marcador continua o mesmo...
+// Restaura a lógica de rotação baseada no heading
+if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
+    iconConfig.rotation = heading;
+    console.log(`>>> updateUserMarkerAndAccuracy: Aplicando rotação ${heading} para a seta.`);
+} else {
+    console.log(">>> updateUserMarkerAndAccuracy: Sem rotação válida para a seta.");
+}
+// --- Fim do Bloco NOVO ---
     if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
         iconConfig.rotation = heading;
     }
@@ -127,6 +134,29 @@ function handleLocationError(error, isWatching) {
  */
 function initMap() {
     console.log(">>> initMap: Iniciando...");
+    function initMap() {
+        console.log(">>> initMap: Iniciando...");
+    
+        // >>> ADICIONE ESTE BLOCO <<<
+        // Tentativa de remover marcador antigo ANTES de qualquer coisa
+        if (userLocationMarker && typeof userLocationMarker.setMap === 'function') {
+             console.warn(">>> initMap: Tentando remover marcador pré-existente do mapa...");
+             try {
+                  userLocationMarker.setMap(null);
+                  console.log(">>> initMap: Marcador pré-existente removido.");
+             } catch(e) {
+                  console.error(">>> initMap: Erro ao remover marcador pré-existente:", e);
+             }
+        }
+        // Garante que a variável seja null ANTES de tentar obter localização
+        userLocationMarker = null;
+        console.log(">>> initMap: Variável userLocationMarker garantida como null.");
+        // >>> FIM DO BLOCO ADICIONADO <<<
+    
+        if (navigator.geolocation) {
+            // ... resto da função initMap continua aqui ...
+        } // ... etc ...
+    }
     if (navigator.geolocation) {
         console.log(">>> initMap: Tentando obter localização inicial...");
         navigator.geolocation.getCurrentPosition(
