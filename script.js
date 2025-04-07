@@ -66,7 +66,7 @@ function updateUserMarkerAndAccuracy(position) {
 const doMarkerUpdate = () => {
     console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Iniciando atualização de círculo e marcador...");
 
-    // --- Círculo de Precisão (Mesmo de antes) ---
+    // --- Círculo de Precisão (Mesmo de antes) ---f
     try {
         if (userLocationAccuracyCircle) {
             userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
@@ -76,27 +76,14 @@ const doMarkerUpdate = () => {
         console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Círculo OK.");
     } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
 
-    // --- Marcador de Seta (Lógica Revisada) ---
-    console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Definindo iconConfig da SETA AZUL...");
-    // Define o iconConfig AQUI, garantindo que seja sempre a seta
-    let iconConfig = {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        fillColor: '#1a73e8',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
-        scale: 6,
-        anchor: new google.maps.Point(0, 2.5), // Ponto de ancoragem
-        rotation: 0 // Começa com rotação 0
-    };
+    // Bloco NOVO (Usando Ícone Padrão - Pin Vermelho)
+// --- Marcador Padrão (Pin Vermelho - Teste) ---
+console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Definindo iconConfig como NULL para usar ícone padrão...");
+let iconConfig = null; // <<< Define como null para usar o ícone padrão do Google Maps
 
-    // Aplica rotação SE heading for válido
-    if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
-        iconConfig.rotation = heading;
-         console.log(`>>> updateUserMarkerAndAccuracy (doMarkerUpdate): Aplicando rotação ${heading}.`);
-    } else {
-         console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Sem rotação válida.");
-    }
+// A lógica de rotação não se aplica ao ícone padrão, então é removida/ignorada.
+console.log(">>> updateUserMarkerAndAccuracy (doMarkerUpdate): Rotação ignorada (ícone padrão).");
+// --- Fim do Bloco NOVO ---
 
     try {
         if (userLocationMarker) { // Se o marcador JÁ existe
@@ -267,7 +254,12 @@ function initializeMapAndServices(initialCoords, initialZoom) {
 
     try {
         console.log(">>> initializeMapAndServices: Criando mapa...");
-        map = new google.maps.Map(mapDiv, { center: initialCoords, zoom: initialZoom, mapId: "DEMO_MAP_ID" });
+        // Bloco NOVO (sem mapId)
+    map = new google.maps.Map(mapDiv, {
+        center: coords,
+        zoom: zoomLevel // Removemos mapId
+        // mapId: "DEMO_MAP_ID" // Ou comente assim
+    });
         console.log(">>> initializeMapAndServices: Mapa criado. Criando PlacesService...");
         placesService = new google.maps.places.PlacesService(map);
         console.log(">>> initializeMapAndServices: PlacesService criado.");
