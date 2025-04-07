@@ -456,41 +456,7 @@ foundMarkers = []; // Recria o array como vazio
     // --- LISTENERS DE EVENTOS ---
 
     // Listener para TODOS os Botões de Categoria
-    categoryButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const categoryType = this.dataset.category;
-            console.log(`Categoria clicada: "${categoryType}"`);
-            if (!map || !placesService) { alert("Mapa/Serviços não prontos."); return; }
-
-            // Limpa resultados/rota anteriores ANTES da nova busca
-            clearFoundMarkers();
-
-            let searchLocation = currentUserLocation; // Prioriza localização atual
-            let searchRadius = 5000; // Raio de 5km (ajuste conforme necessário)
-            let request;
-
-            if (searchLocation) {
-                console.log(`Procurando por "${categoryType}" perto da localização atual...`);
-                request = {
-                     location: searchLocation,
-                     radius: searchRadius, // Raio em metros
-                     // type: [categoryType] // 'type' é mais restritivo, use 'keyword' ou 'query' para mais resultados
-                     keyword: categoryType // 'keyword' tende a dar mais resultados que 'type'
-                     // query: categoryType // 'query' pode ser usado com textSearch, não nearbySearch
-                };
-                 placesService.nearbySearch(request, handleSearchResults); // Usa nearbySearch
-            } else {
-                 // Se não tem localização, usa bounds do mapa (menos preciso)
-                 console.log(`Procurando por "${categoryType}" na área visível do mapa...`);
-                 if (!map.getBounds()) { alert("Área do mapa não definida."); return; }
-                 request = {
-                     bounds: map.getBounds(),
-                     query: categoryType // Usa textSearch se baseado em bounds
-                 };
-                 placesService.textSearch(request, handleSearchResults); // Usa textSearch
-            }
-        });
-    });
+    console.log(`--- Após clearFoundMarkers: foundMarkers.length é ${foundMarkers.length}`); // Log que adicionamos
 
      // Função para lidar com os resultados da busca (nearbySearch ou textSearch)
      function handleSearchResults(results, status) {
