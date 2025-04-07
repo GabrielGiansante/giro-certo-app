@@ -1,443 +1,373 @@
 // ========================================================================
 // Rota Fácil - script.js
-// VERSÃO DE TESTE 2: Reintroduzindo Seta e WatchPosition
+// VERSÃO CORRIGIDA FINAL (Esperamos!) - Seta/Watch + Busca Categoria Simplificada
 // ========================================================================
 
-// Variáveis globais (incluindo as da seta e watchId)
+// --- Variáveis Globais ---
 let map;
 let placesService;
-let directionsService = null; // Ainda não reintroduzido
-let directionsRenderer = null; // Ainda não reintroduzido
-// const markers = []; // Ainda não reintroduzido
-let foundMarkers = []; // Usado apenas para LOGAR resultados por enquanto
-let currentUserLocation = null;
-let userLocationMarker = null; // Variável da Seta
-let userLocationAccuracyCircle = null; // Variável do Círculo
-let watchId = null; // Variável do Watcher
-// Variáveis de Recálculo (ainda não usadas nesta versão)
-let currentRouteResult = null;
-let currentRouteRequest = null;
-let isRecalculating = false;
-const ROUTE_DEVIATION_TOLERANCE = 50;
-// let selectedPlaceData = null; // Autocomplete ainda não reintroduzido
-// Referência ao container principal (para modo mapa)
-let appContainer = null; // Ainda não usado nesta versão
+let directionsService = null;     // Desativado nesta versão
+let directionsRenderer = null;    // Desativado nesta versão
+let foundMarkers = [];            // Guarda marcadores da busca por categoria
+let currentUserLocation = null;   // Guarda coords {lat, lng} do usuário
+let userLocationMarker = null;    // Guarda o objeto Marker da seta do usuário
+let userLocationAccuracyCircle = null; // Guarda o objeto Circle da precisão
+let watchId = null;               // Guarda o ID do watchPosition
+let appContainer = null;          // Referência ao div principal
+// Variáveis não usadas nesta versão simplificada:
+// const markers = [];
+// let currentRouteResult = null;
+// let currentRouteRequest = null;
+// let isRecalculating = false;
+// const ROUTE_DEVIATION_TOLERANCE = 50;
+// let selectedPlaceData = null;
 
-// --- Reset Inicial do Watcher (GARANTIDO) ---
+
+// --- Reset Inicial Garantido das Variáveis Globais ao Carregar ---
+userLocationMarker = null;
+userLocationAccuracyCircle = null;
 if (navigator.geolocation && typeof watchId !== 'undefined' && watchId !== null) {
-     console.log(">>> Reset Inicial: Tentando limpar watchId pré-existente:", watchId);
-     try { // Adiciona try-catch para clearWatch
-          navigator.geolocation.clearWatch(watchId);
-          console.log(">>> Reset Inicial: clearWatch executado para watchId:", watchId);
-     } catch (e) {
-          console.error(">>> Reset Inicial: Erro ao executar clearWatch:", e);
-     }
-     watchId = null; // Define como null DEPOIS de tentar limpar
-} else {
-     console.log(">>> Reset Inicial: Nenhum watchId pré-existente ou inválido encontrado para limpar.");
-     watchId = null; // Garante que seja null se não entrou no if
+    console.log(">>> Script Init: Limpando watchId pré-existente:", watchId);
+    try { navigator.geolocation.clearWatch(watchId); } catch (e) { console.error(">>> Script Init: Erro ao limpar watchId:", e); }
 }
-// Garante que watchId seja ABSOLUTAMENTE null ao iniciar o script, independentemente do que aconteceu acima
 watchId = null;
-console.log(">>> Reset Inicial: Estado final GARANTIDO de watchId:", watchId);
-// --------------------------------------------
+foundMarkers = []; // Garante que começa vazio
+console.log(">>> Script Init: Variáveis globais resetadas (marcador, círculo, watchId, foundMarkers).");
+// -----------------------------------------------------------------
 
 
 /**
- * Cria ou atualiza o marcador de seta e círculo de precisão do usuário.
- * Chamada por getCurrentPosition e watchPosition.
+ * Cria/Atualiza o marcador de seta e círculo de precisão do usuário.
  */
 function updateUserMarkerAndAccuracy(position) {
-    console.log(">>> updateUserMarkerAndAccuracy: INÍCIO DA FUNÇÃO. Dados recebidos:", position ? position.coords : 'null');
+    console.log(">>> updateUserMarkerAndAccuracy: INÍCIO. Coords:", position ? position.coords.latitude : 'null', position ? position.coords.longitude : 'null');
 
     if (!position || !position.coords) {
-         console.warn(">>> updateUserMarkerAndAccuracy: Posição inválida recebida. Abortando.");
-         return;
+         console.warn(">>> updateUserMarkerAndAccuracy: Posição inválida. Abortando."); return;
     }
-
-    const pos = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude
-    };
+    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
     const accuracy = position.coords.accuracy;
     const heading = position.coords.heading;
 
-    // Verifica se o mapa existe e é um objeto válido do Google Maps
-    if (!map || typeof map.setCenter !== 'function') { // Checa se 'map' é um objeto de mapa válido
-        console.error(">>> updateUserMarkerAndAccuracy: ERRO - A variável 'map' não é um objeto de mapa válido!");
-        return;
+    if (!map || typeof map.setCenter !== 'function') {
+        console.error(">>> updateUserMarkerAndAccuracy: ERRO - Mapa inválido!"); return;
     }
-    console.log(">>> updateUserMarkerAndAccuracy: Variável 'map' OK. Verificando círculo...");
 
-    // --- Círculo de Precisão ---
-    try { // try-catch para operações do círculo
+    // Círculo de Precisão
+    try {
         if (userLocationAccuracyCircle) {
-            userLocationAccuracyCircle.setCenter(pos);
-            userLocationAccuracyCircle.setRadius(accuracy);
+            userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
         } else {
-            userLocationAccuracyCircle = new google.maps.Circle({
-                strokeColor: '#1a73e8', strokeOpacity: 0.4, strokeWeight: 1,
-                fillColor: '#1a73e8', fillOpacity: 0.1, map: map,
-                center: pos, radius: accuracy, zIndex: 1
-            });
+            userLocationAccuracyCircle = new google.maps.Circle({ map: map, center: pos, radius: accuracy, /*...estilos...*/ zIndex: 1 });
         }
         console.log(">>> updateUserMarkerAndAccuracy: Círculo OK.");
-    } catch(circleError) {
-        console.error("!!! ERRO ao criar/atualizar Círculo de Precisão:", circleError);
-    }
+    } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
 
-
-    console.log(">>> updateUserMarkerAndAccuracy: Preparando ícone da seta...");
-    // --- Marcador de Seta ---
-    let iconConfig = {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#1a73e8', fillOpacity: 1,
-        strokeColor: '#ffffff', strokeWeight: 2, scale: 6, anchor: new google.maps.Point(0, 2), rotation: 0
-    };
-
+    // Marcador de Seta
+    let iconConfig = { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, /*...estilos...*/ rotation: 0 };
     if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
         iconConfig.rotation = heading;
-        console.log(`>>> updateUserMarkerAndAccuracy: Usando rotação ${heading} para a seta.`);
-    } else {
-        console.log(">>> updateUserMarkerAndAccuracy: Sem rotação válida para a seta.");
     }
-
-    try { // try-catch para operações do marcador
+    try {
         if (userLocationMarker) {
             console.log(">>> updateUserMarkerAndAccuracy: Atualizando seta existente...");
-            userLocationMarker.setPosition(pos);
-            userLocationMarker.setIcon(iconConfig);
-            if(userLocationMarker.getMap() == null) { // Garante que está no mapa
-                 console.warn(">>> updateUserMarkerAndAccuracy: Marcador existente não estava no mapa, readicionando.");
-                 userLocationMarker.setMap(map);
-            }
-            console.log(">>> updateUserMarkerAndAccuracy: Seta existente ATUALIZADA.");
+            userLocationMarker.setPosition(pos); userLocationMarker.setIcon(iconConfig);
+            if(userLocationMarker.getMap() == null) { userLocationMarker.setMap(map); console.warn(">>> updateUserMarkerAndAccuracy: Marcador estava fora do mapa, readicionado."); }
+            console.log(">>> updateUserMarkerAndAccuracy: Seta ATUALIZADA.");
         } else {
             console.log(">>> updateUserMarkerAndAccuracy: Criando NOVA seta...");
-            userLocationMarker = new google.maps.Marker({
-                 position: pos, map: map, title: 'Sua localização atual', icon: iconConfig, zIndex: 2
-            });
-             console.log(">>> updateUserMarkerAndAccuracy: NOVA seta CRIADA com sucesso.");
+            userLocationMarker = new google.maps.Marker({ position: pos, map: map, title: 'Sua localização', icon: iconConfig, zIndex: 2 });
+            console.log(">>> updateUserMarkerAndAccuracy: NOVA seta CRIADA.");
         }
-    } catch (markerError) {
-        console.error("!!! ERRO ao criar/atualizar Marcador (Seta):", markerError);
-        // Se falhou ao criar, garante que a variável fique null para tentar de novo
-        if (!userLocationMarker) { userLocationMarker = null; }
-    }
+    } catch (markerError) { console.error("!!! ERRO Marcador/Seta:", markerError); userLocationMarker = null; }
 
-
-    currentUserLocation = pos; // Atualiza localização global
-    console.log(">>> updateUserMarkerAndAccuracy: Variável currentUserLocation atualizada.");
-
-    // --- Verificação de Desvio de Rota (AINDA DESATIVADA NESTA VERSÃO) ---
-    // if (currentRouteResult && !isRecalculating && currentUserLocation && currentRouteRequest) { ... }
-
-    console.log(">>> updateUserMarkerAndAccuracy: FIM DA FUNÇÃO.");
+    currentUserLocation = pos;
+    console.log(">>> updateUserMarkerAndAccuracy: FIM.");
 }
 
 /**
  * Lida com erros da API de Geolocalização.
  */
 function handleLocationError(error, isWatching) {
-    let prefix = isWatching ? 'Erro ao monitorar localização' : 'Erro ao obter localização inicial';
+    let prefix = isWatching ? 'Erro Watch' : 'Erro Get';
     let message = `${prefix}: `;
     switch(error.code) {
-       case error.PERMISSION_DENIED: message += "Permissão de localização negada."; break;
+       case error.PERMISSION_DENIED: message += "Permissão negada."; break;
        case error.POSITION_UNAVAILABLE: message += "Localização indisponível."; break;
-       case error.TIMEOUT: message += "Tempo limite esgotado."; break;
-       default: message += `Erro desconhecido (código ${error.code}).`; break;
+       case error.TIMEOUT: message += "Tempo esgotado."; break;
+       default: message += `Erro ${error.code}.`; break;
     }
-    console.warn(message, error);
+    console.warn(message, error.message);
 
-    // Limpa watcher e marcador se a permissão for negada durante o monitoramento
+    // Limpa tudo se permissão negada durante watch
     if (isWatching && error.code === error.PERMISSION_DENIED) {
-       if (userLocationMarker) { userLocationMarker.setMap(null); userLocationMarker = null; }
-       if (userLocationAccuracyCircle) { userLocationAccuracyCircle.setMap(null); userLocationAccuracyCircle = null; }
-       if (watchId !== null) {
-            try { navigator.geolocation.clearWatch(watchId); } catch(e) { console.error("Erro ao limpar watchId em handleLocationError:", e); }
-            watchId = null;
-            console.log("Monitoramento (watchId) parado por negação de permissão.");
-       }
+       console.warn(">>> handleLocationError: Permissão negada durante watch. Limpando tudo.");
+       if (userLocationMarker) { try { userLocationMarker.setMap(null); } catch(e){} userLocationMarker = null; console.log("   - Marcador limpo."); }
+       if (userLocationAccuracyCircle) { try { userLocationAccuracyCircle.setMap(null); } catch(e){} userLocationAccuracyCircle = null; console.log("   - Círculo limpo."); }
+       if (watchId !== null) { try { navigator.geolocation.clearWatch(watchId); } catch(e){} watchId = null; console.log("   - WatchId parado e limpo."); }
     }
 }
 
-
 /**
- * Função de Callback principal chamada pela API do Google Maps.
+ * Função de Callback principal - Chamada pela API Google Maps.
  */
 function initMap() {
     console.log(">>> initMap: Iniciando...");
-
     if (navigator.geolocation) {
         console.log(">>> initMap: Tentando obter localização inicial...");
         navigator.geolocation.getCurrentPosition(
-            (position) => { // SUCESSO INICIAL
-                console.log(">>> initMap: Localização inicial OBTIDA:", position.coords.latitude, position.coords.longitude);
+            (position) => { // SUCESSO
+                console.log(">>> initMap: Localização inicial OBTIDA.");
                 currentUserLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-                initializeMapAndServices(currentUserLocation, 15); // Inicializa o mapa com coords
-                // >>> CHAMA A FUNÇÃO DA SETA <<<
-                updateUserMarkerAndAccuracy(position); // REATIVADA
-                // >>> CHAMA O WATCHER <<<
-                startWatchingPosition(); // REATIVADA
+                initializeMapAndServices(currentUserLocation, 15); // Inicializa mapa/serviços
+                updateUserMarkerAndAccuracy(position); // Mostra seta inicial
+                startWatchingPosition(); // Inicia monitoramento contínuo
             },
-            (error) => { // ERRO INICIAL
-                console.warn(">>> initMap: Erro ao obter localização inicial:", error.code, error.message);
+            (error) => { // ERRO
+                console.warn(">>> initMap: Erro ao obter localização inicial.");
                 currentUserLocation = null;
-                const defaultCoords = { lat: -23.5505, lng: -46.6333 };
-                initializeMapAndServices(defaultCoords, 13); // Inicializa mapa com SP
-                handleLocationError(error, false); // Chama o handler de erro
-                // >>> CHAMA O WATCHER MESMO ASSIM <<<
-                startWatchingPosition(); // REATIVADA
+                const defaultCoords = { lat: -23.5505, lng: -46.6333 }; // SP Padrão
+                initializeMapAndServices(defaultCoords, 13);
+                handleLocationError(error, false);
+                startWatchingPosition(); // Tenta iniciar mesmo sem loc inicial
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 } // Opções getCurrentPosition
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
-    } else { // Navegador não suporta geolocalização
-        currentUserLocation = null;
-        console.warn(">>> initMap: Geolocalização não suportada. Usando São Paulo.");
-        alert("Seu navegador não suporta Geolocalização.");
-        const defaultCoords = { lat: -23.5505, lng: -46.6333 };
-        initializeMapAndServices(defaultCoords, 13); // Inicializa mapa com SP
+    } else { // Sem suporte a Geo
+        console.warn(">>> initMap: Geolocalização não suportada."); /* ... inicializa com SP ... */
+        const defaultCoords = { lat: -23.5505, lng: -46.6333 }; initializeMapAndServices(defaultCoords, 13);
     }
 }
 
 /**
- * Função separada para iniciar o watchPosition. (Reintroduzida)
+ * Inicia o monitoramento contínuo da localização (watchPosition).
  */
 function startWatchingPosition() {
-     if (!navigator.geolocation) {
-          console.warn("startWatchingPosition: Geolocalização não suportada, impossível monitorar.");
-          return;
-     }
-     // Limpa qualquer watcher anterior ANTES de iniciar um novo (precaução extra)
-     if (watchId !== null) {
-          console.warn("startWatchingPosition: Limpando watchId existente antes de iniciar novo:", watchId);
-          try { navigator.geolocation.clearWatch(watchId); } catch(e) { console.error("startWatchingPosition: Erro ao limpar watchId anterior:", e); }
+     if (!navigator.geolocation) { console.warn(">>> startWatchingPosition: Geo não suportada."); return; }
+     if (watchId !== null) { // Se já existe um, limpa antes
+          console.warn(">>> startWatchingPosition: Limpando watchId anterior:", watchId);
+          try { navigator.geolocation.clearWatch(watchId); } catch(e) { console.error(">>> startWatchingPosition: Erro ao limpar watchId anterior:", e); }
           watchId = null;
      }
-
-     console.log(">>> Tentando iniciar watchPosition...");
-     try { // try-catch para o watchPosition em si
+     console.log(">>> startWatchingPosition: Tentando iniciar...");
+     try {
          watchId = navigator.geolocation.watchPosition(
-             (newPosition) => { // Callback de SUCESSO do watchPosition
-                 console.log("--- watchPosition Callback: Sucesso! Dados:", newPosition.coords.latitude, newPosition.coords.longitude);
-                 if (newPosition && newPosition.coords) {
-                     console.log("--- watchPosition Callback: Posição válida, chamando updateUserMarkerAndAccuracy.");
-                     updateUserMarkerAndAccuracy(newPosition);
-                 } else {
-                     console.warn("--- watchPosition Callback: Recebeu nova posição, mas dados inválidos.", newPosition);
-                 }
+             (newPosition) => { // SUCESSO no watch
+                 console.log("--- watchPosition: Sucesso. Chamando update...");
+                 updateUserMarkerAndAccuracy(newPosition);
              },
-             (error) => { // Callback de ERRO do watchPosition
-                 console.error("!!! watchPosition Callback: ERRO recebido:", error.code, error.message);
-                 handleLocationError(error, true); // Chama a função que trata o erro (e pode parar o watch)
+             (error) => { // ERRO no watch
+                 console.error("!!! watchPosition: ERRO recebido:", error.code, error.message);
+                 handleLocationError(error, true);
              },
-             // Opções do watchPosition
-             { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+             { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 } // Opções
          );
-         console.log(`>>> watchPosition chamado. watchId resultante: ${watchId}`);
-     } catch (watchError) {
-         console.error("!!! ERRO GERAL ao tentar iniciar watchPosition:", watchError);
-         watchId = null; // Garante que watchId seja null se falhar ao iniciar
-     }
+         console.log(`>>> startWatchingPosition: Iniciado com watchId: ${watchId}`);
+     } catch (watchError) { console.error("!!! ERRO GERAL ao iniciar watchPosition:", watchError); watchId = null; }
  }
 
-
 /**
- * Inicializa o mapa e os serviços essenciais (Places).
+ * Inicializa o mapa e o PlacesService.
  */
 function initializeMapAndServices(initialCoords, initialZoom) {
-    console.log(">>> initializeMapAndServices: Iniciando com coords:", initialCoords);
+    console.log(">>> initializeMapAndServices: Iniciando...");
     const mapDiv = document.getElementById('map-container');
     if (!mapDiv) { console.error("!!! ERRO CRÍTICO: #map-container não encontrado!"); return; }
-    const loadingP = mapDiv.querySelector('p');
-    if (loadingP) loadingP.remove();
+    const loadingP = mapDiv.querySelector('p'); if (loadingP) loadingP.remove();
 
     try {
         console.log(">>> initializeMapAndServices: Criando mapa...");
         map = new google.maps.Map(mapDiv, { center: initialCoords, zoom: initialZoom, mapId: "DEMO_MAP_ID" });
         console.log(">>> initializeMapAndServices: Mapa criado. Criando PlacesService...");
-
         placesService = new google.maps.places.PlacesService(map);
         console.log(">>> initializeMapAndServices: PlacesService criado.");
-
-        // AINDA NÃO inicializa Directions aqui nesta versão de teste
-        // directionsService = new google.maps.DirectionsService();
-        // directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: false });
-
         console.log(">>> initializeMapAndServices: Serviços essenciais prontos.");
-        setupCategoryListeners(); // Configura SOMENTE categorias
 
-        // Marcador simples foi REMOVIDO daqui
+        setupEventListeners(); // <<<<<<< CHAMA A FUNÇÃO CORRETA DE SETUP
 
     } catch (error) {
         console.error("!!! ERRO ao inicializar mapa ou PlacesService:", error);
-        if (mapDiv) { mapDiv.innerHTML = `<p style="color: red; padding: 20px; font-weight: bold;">ERRO: ${error.message}</p>`; }
+        if (mapDiv) { mapDiv.innerHTML = `<p style="color: red; padding: 20px;">ERRO: ${error.message}</p>`; }
     }
 }
 
 /**
- * Configura SOMENTE os listeners dos botões de categoria.
+ * Configura TODOS os listeners de eventos necessários.
  */
-function setupCategoryListeners() {
-    console.log(">>> setupCategoryListeners: Configurando...");
+function setupEventListeners() { // <<<<<<< NOME CORRETO DA FUNÇÃO DE SETUP
+    console.log(">>> setupEventListeners: Configurando...");
+
+    appContainer = document.getElementById('app-container');
+    const backButton = document.getElementById('back-button');
+    const searchInput = document.getElementById('search-input'); // Necessário para Autocomplete
+    const addLocationBtn = document.getElementById('add-location-btn'); // Necessário para Adicionar Manual
+    const selectedLocationsList = document.getElementById('selected-locations-list'); // Necessário para Lista/Remover
     const categoryButtons = document.querySelectorAll('.category-btn');
-    const routeFoundBtn = document.getElementById('route-found-btn'); // Pega o botão traçar rota para desabilitar/habilitar
+    const routeFoundBtn = document.getElementById('route-found-btn'); // Necessário para Habilitar/Desabilitar
 
-    if (!categoryButtons || categoryButtons.length === 0) {
-        console.error("!!! ERRO: Nenhum botão de categoria (.category-btn) encontrado!");
-        return;
-    }
-    if (!routeFoundBtn) {
-         console.warn("AVISO: Botão #route-found-btn não encontrado, não será habilitado pela busca.");
-    }
+    // Verifica elementos essenciais
+    let missingElement = null;
+    if (!appContainer) missingElement = '#app-container';
+    else if (!searchInput) missingElement = '#search-input'; // Verifica autocomplete input
+    else if (!addLocationBtn) missingElement = '#add-location-btn'; // Verifica botão add
+    else if (!selectedLocationsList) missingElement = '#selected-locations-list'; // Verifica lista
+    else if (!categoryButtons || categoryButtons.length === 0) missingElement = '.category-btn';
+    else if (!routeFoundBtn) missingElement = '#route-found-btn';
 
+    if (missingElement) {
+        console.error(`ERRO FATAL em setupEventListeners: Elemento essencial "${missingElement}" não encontrado!`);
+        return; // Para a configuração
+    }
+    if (!backButton) { console.warn("AVISO: Botão #back-button não encontrado."); }
+
+    // --- Configuração Autocomplete (SIMPLIFICADO - SEM AINDA USAR addSelectedPlaceToList) ---
+    setTimeout(() => {
+        if (map && google.maps.places) {
+            try {
+                const autocomplete = new google.maps.places.Autocomplete(searchInput);
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    console.log('Autocomplete: place_changed:', place ? place.name : 'Inválido');
+                    // selectedPlaceData = (place && place.geometry...) ? place : null; // Lógica completa depois
+                });
+                searchInput.addEventListener('input', () => { if (!searchInput.value) { /* selectedPlaceData = null; */ } });
+                console.log("Autocomplete inicializado (simplificado).");
+            } catch (e) { console.error("ERRO Autocomplete:", e); }
+        } else { console.error("Autocomplete não pôde ser inicializado."); }
+    }, 500);
+
+    // --- Listener Botões de Categoria ---
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
             const categoryType = this.dataset.category;
             console.log(`>>> CATEGORIA CLICADA: "${categoryType}" <<<`);
-
-            // Verifica mapa e placesService
-            if (!map || !placesService || typeof placesService.nearbySearch !== 'function') { // Verifica se placesService é válido
-                alert("Mapa ou serviço Places não está pronto!");
-                console.error("Busca categoria: Mapa ou PlacesService inválido/indisponível.");
-                return;
+            if (!map || !placesService || typeof placesService.nearbySearch !== 'function') {
+                alert("Mapa/Places não pronto!"); console.error("Busca categoria: Dependências inválidas."); return;
             }
-
-            console.log(`--- Iniciando busca SIMPLIFICADA para "${categoryType}" ---`);
-            // Desabilita botão Traçar Rota ANTES da busca
-            if(routeFoundBtn) routeFoundBtn.disabled = true;
-            // Limpa marcadores anteriores (usando a função corrigida)
-            clearFoundMarkers();
+            console.log(`--- Iniciando busca para "${categoryType}" ---`);
+            if(routeFoundBtn) routeFoundBtn.disabled = true; // Desabilita antes
+            clearFoundMarkers(); // Limpa anteriores
 
             let request;
-            if (currentUserLocation) { // Prioriza busca próxima
-                 console.log("--- Buscando perto da localização atual ---");
+            if (currentUserLocation) {
+                console.log("--- Buscando perto (nearbySearch) ---");
                 request = { location: currentUserLocation, radius: 5000, keyword: categoryType };
-                placesService.nearbySearch(request, handleSimplifiedSearchResults);
-            } else { // Busca na área visível se não tem localização
-                console.log("--- Buscando na área visível do mapa ---");
-                 if (!map.getBounds()) { alert("Área do mapa não definida."); return; }
+                placesService.nearbySearch(request, handleSearchResults); // Chama o callback REAL
+            } else {
+                console.log("--- Buscando na área visível (textSearch) ---");
+                if (!map.getBounds()) { alert("Área do mapa indefinida."); return; }
                 request = { bounds: map.getBounds(), query: categoryType };
-                placesService.textSearch(request, handleSimplifiedSearchResults);
+                placesService.textSearch(request, handleSearchResults); // Chama o callback REAL
             }
         });
     });
-    console.log(">>> setupCategoryListeners: Concluído.");
-}
+
+    // --- Listener Botão "Traçar Rota" (AINDA NÃO IMPLEMENTADO COMPLETAMENTE) ---
+     if (routeFoundBtn) {
+         routeFoundBtn.addEventListener('click', function() {
+             alert("Funcionalidade 'Traçar Rota' ainda será reativada.");
+             console.log("Botão Traçar Rota clicado (funcionalidade pendente).");
+             // A lógica completa de pedir localização, limitar waypoints,
+             // chamar directionsService, entrar no modo mapa, etc.,
+             // precisa ser REINTRODUZIDA AQUI CUIDADOSAMENTE depois.
+         });
+     }
+
+     // --- Listeners para Adicionar/Remover Manual (AINDA NÃO IMPLEMENTADOS) ---
+     if (addLocationBtn) {
+          addLocationBtn.addEventListener('click', () => { alert("Adicionar manual ainda não reativado."); });
+     }
+      if (selectedLocationsList) {
+           selectedLocationsList.addEventListener('click', (event) => {
+                if (event.target.classList.contains('remove-btn')) {
+                     alert("Remover manual ainda não reativado.");
+                }
+           });
+      }
+
+
+    // --- Listener Botão Voltar (AINDA NÃO IMPLEMENTADO COMPLETAMENTE) ---
+    if (backButton && appContainer) {
+        backButton.addEventListener('click', () => {
+            alert("Botão Voltar ainda será reativado completamente.");
+            console.log("Botão Voltar clicado (funcionalidade pendente).");
+            // A lógica de remover classe, limpar rota, redimensionar mapa
+            // precisa ser REINTRODUZIDA AQUI CUIDADOSAMENTE depois.
+             // appContainer.classList.remove('map-only-mode');
+             // ...etc...
+        });
+    }
+
+    console.log(">>> setupEventListeners: Concluído.");
+} // --- FIM DA FUNÇÃO setupEventListeners ---
+
 
 /**
- * Callback SIMPLIFICADO para a busca: APENAS LOGA os resultados e adiciona marcadores SIMPLES.
+ * Callback REAL para processar resultados da busca por categoria.
+ * Adiciona marcadores simples ao mapa.
  */
-function handleSimplifiedSearchResults(results, status) {
-    console.log(`>>> handleSimplifiedSearchResults: Status recebido: "${status}"`);
-    const routeFoundBtn = document.getElementById('route-found-btn'); // Pega o botão de novo
+function handleSearchResults(results, status) { // Nome REAL da função callback
+    console.log(`>>> handleSearchResults: Status: "${status}". Resultados:`, results ? results.length : 0);
+    const routeFoundBtn = document.getElementById('route-found-btn');
 
-    // Limpa marcadores anteriores ANTES de adicionar novos (redundante mas seguro)
-    clearFoundMarkers();
+    clearFoundMarkers(); // Limpa marcadores anteriores ANTES de adicionar novos
 
-    if (status === google.maps.places.PlacesServiceStatus.OK) {
-        console.log(`>>> handleSimplifiedSearchResults: SUCESSO! ${results ? results.length : 0} resultados encontrados.`);
-        if (results && results.length > 0) {
-            let bounds = new google.maps.LatLngBounds();
-            let validCount = 0;
-            results.forEach((place, index) => {
-                if (place.name && place.geometry && place.geometry.location) {
-                    console.log(`   - Resultado ${index + 1}: ${place.name} (${place.geometry.location.lat()}, ${place.geometry.location.lng()})`);
-                    // Adiciona marcador simples para este teste
-                    try {
-                         const marker = new google.maps.Marker({
-                              position: place.geometry.location,
-                              map: map,
-                              title: place.name
-                         });
-                         foundMarkers.push(marker); // Guarda referência para limpar depois
-                         bounds.extend(place.geometry.location);
-                         validCount++;
-                    } catch(e) { console.error(`Erro ao criar marcador para ${place.name}:`, e); }
-                } else {
-                     console.log(`   - Resultado ${index + 1}: (Nome ou localização inválida)`);
-                }
-            });
+    if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+        let bounds = new google.maps.LatLngBounds();
+        let validCount = 0;
+        results.forEach((place, index) => {
+            if (place.name && place.geometry && place.geometry.location) {
+                console.log(`   - Adicionando Marcador ${index + 1}: ${place.name}`);
+                try {
+                     const marker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name });
+                     foundMarkers.push(marker); // Guarda referência
+                     bounds.extend(place.geometry.location);
+                     validCount++;
+                } catch(e) { console.error(`Erro ao criar marcador para ${place.name}:`, e); }
+            } else { console.log(`   - Resultado ${index + 1}: Inválido.`); }
+        });
 
-            if (validCount > 0) {
-                 console.log(`>>> handleSimplifiedSearchResults: ${validCount} marcadores adicionados ao mapa.`);
-                 if (currentUserLocation) bounds.extend(currentUserLocation); // Inclui usuário no zoom
-                 map.fitBounds(bounds); // Ajusta o mapa
-                 if (map.getZoom() > 16) map.setZoom(16); // Limita zoom
-
-                 // Habilita o botão Traçar Rota (mesmo que ele não faça nada ainda)
-                 if (routeFoundBtn) routeFoundBtn.disabled = false;
-                 console.log(">>> handleSimplifiedSearchResults: Botão Traçar Rota HABILITADO (funcionalidade ainda desativada).");
-
-            } else {
-                 console.warn(">>> handleSimplifiedSearchResults: Status OK, mas nenhum resultado com localização válida.");
-                 alert("Busca OK, mas nenhum resultado com localização encontrado.");
-                 if (routeFoundBtn) routeFoundBtn.disabled = true;
-            }
-
+        if (validCount > 0) {
+             console.log(`>>> handleSearchResults: ${validCount} marcadores adicionados.`);
+             if (currentUserLocation) bounds.extend(currentUserLocation);
+             map.fitBounds(bounds); if (map.getZoom() > 16) map.setZoom(16);
+             if (routeFoundBtn) routeFoundBtn.disabled = false; console.log(">>> handleSearchResults: Botão Traçar Rota HABILITADO.");
         } else {
-             console.log(">>> handleSimplifiedSearchResults: Status OK, mas array de resultados vazio ou inválido.");
-             alert("Busca OK, mas nenhum resultado encontrado.");
+             console.warn(">>> handleSearchResults: Status OK, mas nenhum marcador válido."); alert("Nenhum local com localização encontrado.");
              if (routeFoundBtn) routeFoundBtn.disabled = true;
         }
-    } else { // Erro na busca
-        console.error(`!!! handleSimplifiedSearchResults: Erro na busca! Status: "${status}"`);
-        alert(`Erro ao buscar locais: ${status}. Verifique o console e a chave da API/limites.`);
+    } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+        console.log(">>> handleSearchResults: ZERO_RESULTS."); alert("Nenhum local encontrado.");
+        if (routeFoundBtn) routeFoundBtn.disabled = true;
+    } else {
+        console.error(`!!! handleSearchResults: Erro na busca! Status: "${status}"`); alert(`Erro ao buscar locais: ${status}.`);
         if (routeFoundBtn) routeFoundBtn.disabled = true;
     }
-    console.log(">>> handleSimplifiedSearchResults: FIM.");
+    console.log(">>> handleSearchResults: FIM.");
 }
-
 
 /**
- * Limpa marcadores encontrados e desabilita botão Traçar Rota.
- * (Função chamada ANTES de cada nova busca por categoria)
+ * Limpa marcadores da busca por categoria e desabilita botão Traçar Rota.
  */
 function clearFoundMarkers() {
-    console.log(`>>> clearFoundMarkers: Iniciando limpeza. ${foundMarkers ? `Array existe com ${foundMarkers.length} itens.` : 'Array é undefined/null.'}`);
-    const routeFoundBtn = document.getElementById('route-found-btn'); // Pega referência ao botão
+    console.log(`>>> clearFoundMarkers: Iniciando. ${foundMarkers ? `Limpando ${foundMarkers.length} marcadores.` : 'Array inválido.'}`);
+    const routeFoundBtn = document.getElementById('route-found-btn');
 
-    if (foundMarkers && Array.isArray(foundMarkers)) {
-        if (foundMarkers.length > 0) {
-             console.log(`>>> clearFoundMarkers: Removendo ${foundMarkers.length} marcadores do mapa...`);
-             try {
-                  foundMarkers.forEach((marker, index) => {
-                       if (marker && typeof marker.setMap === 'function') { marker.setMap(null); }
-                       else { console.warn(`>>> clearFoundMarkers: Item no índice ${index} não é um marcador válido.`); }
-                  });
-                  console.log(`>>> clearFoundMarkers: Marcadores removidos do mapa.`);
-             } catch (e) { console.error(`>>> clearFoundMarkers: Erro durante forEach/setMap(null):`, e); }
-
-             // Tenta zerar o array usando length = 0
-             try {
-                  foundMarkers.length = 0;
-                  console.log(`>>> clearFoundMarkers: Array 'foundMarkers' zerado via length (length atual: ${foundMarkers.length}).`);
-             } catch (e) {
-                  console.error(`>>> clearFoundMarkers: Erro ao tentar zerar array com length = 0:`, e);
-                  console.log(`>>> clearFoundMarkers: Tentando resetar com 'foundMarkers = [];' como fallback.`);
-                  foundMarkers = []; // Fallback
-             }
-        } else {
-             console.log(">>> clearFoundMarkers: Array 'foundMarkers' já estava vazio (length 0).");
-        }
+    if (foundMarkers && Array.isArray(foundMarkers) && foundMarkers.length > 0) {
+         try {
+              foundMarkers.forEach((marker) => { if (marker && typeof marker.setMap === 'function') { marker.setMap(null); } });
+              console.log(`>>> clearFoundMarkers: Marcadores removidos do mapa.`);
+         } catch (e) { console.error(`>>> clearFoundMarkers: Erro ao remover marcadores:`, e); }
+         // Reseta o array para vazio
+         foundMarkers = []; // <<<< USA = [] para garantir
+         console.log(`>>> clearFoundMarkers: Array 'foundMarkers' resetado para []. Length: ${foundMarkers.length}`);
     } else {
-        console.warn(">>> clearFoundMarkers: 'foundMarkers' não é um array válido. Resetando para [].");
-        foundMarkers = []; // Garante que seja um array vazio
+         console.log(">>> clearFoundMarkers: Array já estava vazio ou inválido.");
+         foundMarkers = []; // Garante que seja um array vazio
     }
-
-    // Garante que o botão Traçar Rota seja desabilitado
     if (routeFoundBtn) { routeFoundBtn.disabled = true; }
-    // Limpa a rota do display (embora não estejamos traçando rotas ainda)
-    // if (directionsRenderer) { directionsRenderer.setDirections({ routes: [] }); }
-    console.log(">>> clearFoundMarkers: Limpeza concluída. Estado final de foundMarkers:", foundMarkers ? foundMarkers.length : 'undefined');
+    console.log(">>> clearFoundMarkers: Limpeza concluída.");
 }
-
-
-// --- FUNÇÕES E LISTENERS COMPLETOS (AINDA NÃO REINTRODUZIDOS COMPLETAMENTE) ---
-// setupEventListeners() // Função principal de setup foi substituída por setupCategoryListeners
-// Listener 'routeFoundBtn' // Ainda desativado nesta versão
-// Listener 'addLocationBtn' e 'searchInput' // Ainda desativados
-// Listener 'selectedLocationsList' // Ainda desativado
-// Listener 'backButton' // Ainda desativado
 
 
 // Chamada inicial (via callback da API do Google Maps)
