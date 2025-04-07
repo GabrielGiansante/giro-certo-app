@@ -64,7 +64,21 @@ function updateUserMarkerAndAccuracy(position) {
     } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
 
     // Marcador de Seta
-    let iconConfig = { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, /*...estilos...*/ rotation: 0 };
+    // --- Marcador de Círculo Simples (Teste) ---
+let iconConfig = {
+    path: google.maps.SymbolPath.CIRCLE, // Usa um círculo simples
+    fillColor: '#1a73e8',      // Cor azul
+    fillOpacity: 1,
+    strokeColor: '#ffffff',      // Borda branca
+    strokeWeight: 1,
+    scale: 7                    // Tamanho do círculo
+    // Sem 'anchor' ou 'rotation' necessários para círculo simples
+};
+console.log(">>> updateUserMarkerAndAccuracy: Usando ícone de CÍRCULO SIMPLES para teste.");
+// Removemos a lógica de rotação por enquanto, já que é um círculo
+// if (heading !== null && ...) { ... } else { ... }
+
+// O código abaixo que cria/atualiza o marcador continua o mesmo...
     if (heading !== null && !isNaN(heading) && typeof heading === 'number') {
         iconConfig.rotation = heading;
     }
