@@ -33,9 +33,7 @@ foundMarkers = [];
 console.log(">>> Script Init: Variáveis de estado resetadas.");
 // -------------------------------------------------------
 
-/**
- * Cria/Atualiza o marcador de SETA AZUL e círculo de precisão do usuário.
- */
+// Bloco NOVO para updateUserMarkerAndAccuracy (com espera 'tilesloaded')
 function updateUserMarkerAndAccuracy(position) {
     console.log(">>> updateUserMarkerAndAccuracy: INÍCIO.");
 
@@ -43,44 +41,84 @@ function updateUserMarkerAndAccuracy(position) {
     if (!map || typeof map.setCenter !== 'function') { console.error(">>> updateUserMarkerAndAccuracy: Mapa inválido!"); return; }
 
     const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+    currentUserLocation = pos; // Atualiza global PRIMEIRO
     const accuracy = position.coords.accuracy;
     const heading = position.coords.heading;
-    currentUserLocation = pos; // Atualiza global
 
-    console.log(">>> updateUserMarkerAndAccuracy: Atualizando círculo...");
-    // --- Círculo de Precisão ---
-    try {
-        if (userLocationAccuracyCircle) {
-            userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
-        } else {
-            userLocationAccuracyCircle = new google.maps.Circle({ map: map, center: pos, radius: accuracy, strokeColor: '#1a73e8', strokeOpacity: 0.4, strokeWeight: 1, fillColor: '#1a73e8', fillOpacity: 0.1, zIndex: 1 });
-        }
-    } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
+    console.log(">>> updateUserMarkerAndAccuracy: Mapa e posição OK. Definindo função para atualizar marcador/círculo...");
 
-    console.log(">>> updateUserMarkerAndAccuracy: Preparando ícone da SETA AZUL...");
-    // --- Marcador de Seta Azul ---
-    let iconConfig = {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#1a73e8', fillOpacity: 1,
-        strokeColor: '#ffffff', strokeWeight: 2, scale: 6, anchor: new google.maps.Point(0, 2.5), rotation: 0
-    };
-    if (heading !== null && !isNaN(heading) && typeof heading === 'number') { iconConfig.rotation = heading; }
+    // --- Função que faz a atualização visual ---
+    const performVisualUpdate = () => {
+        console.log(">>> updateUserMarkerAndAccuracy (performVisualUpdate): Executando atualização visual...");
 
-    try {
-        if (userLocationMarker) { // Atualiza existente
-            console.log(">>> updateUserMarkerAndAccuracy: Atualizando SETA existente...");
-            userLocationMarker.setIcon(iconConfig); // Tenta ícone primeiro
-            userLocationMarker.setPosition(pos);
-            if(userLocationMarker.getMap() == null) { userLocationMarker.setMap(map); console.warn(">>> updateUserMarkerAndAccuracy: Seta readicionada ao mapa."); }
-            console.log(">>> updateUserMarkerAndAccuracy: Seta ATUALIZADA.");
-        } else { // Cria nova
-            console.log(">>> updateUserMarkerAndAccuracy: Criando NOVA SETA...");
-            userLocationMarker = new google.maps.Marker({ position: pos, map: map, title: 'Sua localização', icon: iconConfig, zIndex: 2 });
-            console.log(">>> updateUserMarkerAndAccuracy: NOVA SETA CRIADA.");
-        }
-    } catch (markerError) { console.error("!!! ERRO Marcador/Seta:", markerError); userLocationMarker = null; }
+        // --- Círculo de Precisão ---
+        try {
+            if (userLocationAccuracyCircle) {
+                userLocationAccuracyCircle.setCenter(pos); userLocationAccuracyCircle.setRadius(accuracy);
+            } else {
+                console.log(">>> (performVisualUpdate): Criando NOVO círculo...");
+                userLocationAccuracyCircle = new google.maps.Circle({ map: map, center: pos, radius: accuracy, strokeColor: '#1a73e8', strokeOpacity: 0.4, strokeWeight: 1, fillColor: '#1a73e8', fillOpacity: 0.1, zIndex: 1 });
+            }
+            console.log(">>> (performVisualUpdate): Círculo OK.");
+        } catch(circleError) { console.error("!!! ERRO Círculo:", circleError); }
 
-    console.log(">>> updateUserMarkerAndAccuracy: FIM.");
+        // --- Marcador de Seta Azul ---
+        console.log(">>> (performVisualUpdate): Preparando ícone da SETA AZUL...");
+        let iconConfig = {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#1a73e8', fillOpacity: 1,
+            strokeColor: '#ffffff', strokeWeight: 2, scale: 6, anchor: new google.maps.Point(0, 2.5), rotation: 0
+        };
+        if (heading !== null && !isNaN(heading) && typeof heading === 'number') { iconConfig.rotation = heading; }
+
+        try {
+            if (userLocationMarker) { // Atualiza existente
+                console.log(">>> (performVisualUpdate): Atualizando SETA existente...");
+                userLocationMarker.setIcon(iconConfig);
+                userLocationMarker.setPosition(pos);
+                // Garante que está no mapa (ESSENCIAL após recarregar, caso o mapa tenha sido recriado)
+                if (userLocationMarker.getMap() !== map) {
+                     console.warn(">>> (performVisualUpdate): SETA não estava no mapa atual! Readicionando...");
+                     userLocationMarker.setMap(map);
+                }
+                console.log(">>> (performVisualUpdate): SETA ATUALIZADA.");
+            } else { // Cria nova
+                console.log(">>> (performVisualUpdate): Criando NOVA SETA...");
+                userLocationMarker = new google.maps.Marker({ position: pos, map: map, title: 'Sua localização', icon: iconConfig, zIndex: 2 });
+                console.log(">>> (performVisualUpdate): NOVA SETA CRIADA.");
+            }
+        } catch (markerError) { console.error("!!! ERRO Marcador/Seta:", markerError); userLocationMarker = null; }
+
+        console.log(">>> updateUserMarkerAndAccuracy (performVisualUpdate): FIM.");
+    }; // Fim da função performVisualUpdate
+
+
+    // --- Lógica de Espera pelo Mapa Pronto ---
+    // Tenta verificar se o mapa já tem 'tiles' carregados (mais confiável que 'idle' às vezes)
+    // Verifica se o método 'getProjection' existe, indica que o mapa está minimamente inicializado
+    if (map.getProjection()) {
+         console.log(">>> updateUserMarkerAndAccuracy: Mapa parece pronto (getProjection existe). Executando update agora.");
+         performVisualUpdate();
+    } else {
+         // Se projeção não existe, espera pelo evento 'tilesloaded' (dispara quando os blocos do mapa carregam)
+         console.warn(">>> updateUserMarkerAndAccuracy: Mapa ainda não parece pronto. Aguardando 'tilesloaded'...");
+         const listener = google.maps.event.addListenerOnce(map, 'tilesloaded', () => {
+              console.log(">>> updateUserMarkerAndAccuracy: Evento 'tilesloaded' disparado!");
+              performVisualUpdate();
+         });
+         // Timeout de segurança caso 'tilesloaded' não dispare (raro, mas possível)
+         setTimeout(() => {
+              // Verifica se o listener ainda existe (significa que 'tilesloaded' não disparou)
+              // e se o marcador ainda não foi criado
+              if (listener && (!userLocationMarker || !userLocationMarker.getMap())) {
+                   console.warn(">>> updateUserMarkerAndAccuracy: Timeout (3s) esperando 'tilesloaded'. Removendo listener e tentando update mesmo assim...");
+                   google.maps.event.removeListener(listener); // Remove o listener para evitar execução dupla
+                   performVisualUpdate();
+              }
+         }, 3000); // Espera 3 segundos
+    }
+    console.log(">>> updateUserMarkerAndAccuracy: FIM (update pode estar aguardando tilesloaded).");
 }
+// --- Fim do Bloco NOVO ---
 
 /**
  * Lida com erros da API de Geolocalização.
