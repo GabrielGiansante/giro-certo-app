@@ -338,7 +338,7 @@ body {
 /* Faz o botão Traçar Rota ocupar a largura */
 #controls #top-controls-area #route-found-btn {
      width: 100%; /* Botão ocupa largura total */
-     padding: 10px 5px; /* Ajusta padding */
+     padding: 7px 5px; /* Ajusta padding */
 }
 /* --- Fim das NOVAS Regras --- */
 
