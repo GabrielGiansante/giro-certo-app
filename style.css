@@ -301,7 +301,7 @@ body {
     flex-direction: column; /* <<< MUDA PARA COLUNA: Categorias ACIMA do botão Traçar Rota */
     align-items: stretch; /* <<< FAZ ITENS ESTICAREM HORIZONTALMENTE */
     gap: 4px; /* <<< Adiciona espaço vertical entre categorias e botão Traçar Rota */
-    padding: 10px; /* Ajuste o padding se necessário */
+    padding: 5px; /* Ajuste o padding se necessário */
     border-bottom: 1px solid #eee;
 }
     /* NOVAS Regras para Categorias dentro de @media (max-width: 768px) */
