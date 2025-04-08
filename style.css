@@ -125,7 +125,7 @@ body {
 
 /* Área de Conteúdo Rolável (Input, Lista, botões inferiores) */
 #scrollable-controls {
-    padding: 15px; /* Padding uniforme */
+    padding: 3px; /* Padding uniforme */
     overflow-y: auto; /* Habilita rolagem vertical APENAS nesta área */
     flex-grow: 1; /* Faz esta área ocupar o espaço vertical restante em #controls */
     /* Isso é crucial para o layout com max-height em mobile */
@@ -300,7 +300,7 @@ body {
     position: static; /* Continua não-sticky */
     flex-direction: column; /* <<< MUDA PARA COLUNA: Categorias ACIMA do botão Traçar Rota */
     align-items: stretch; /* <<< FAZ ITENS ESTICAREM HORIZONTALMENTE */
-    gap: 10px; /* <<< Adiciona espaço vertical entre categorias e botão Traçar Rota */
+    gap: 4px; /* <<< Adiciona espaço vertical entre categorias e botão Traçar Rota */
     padding: 10px; /* Ajuste o padding se necessário */
     border-bottom: 1px solid #eee;
 }
@@ -332,7 +332,7 @@ body {
 #controls #top-controls-area #route-found-button-container {
     padding-left: 0; /* Remove padding esquerdo desnecessário */
     width: 100%; /* Ocupa toda a largura */
-    margin-top: 5px; /* Pequena margem acima dele */
+    /*margin-top: 5px; /* Pequena margem acima dele */
 }
 
 /* Faz o botão Traçar Rota ocupar a largura */
