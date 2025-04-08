@@ -125,7 +125,7 @@ body {
 
 /* Área de Conteúdo Rolável (Input, Lista, botões inferiores) */
 #scrollable-controls {
-    padding: 0 12xp 10xp 12xp; /* Padding uniforme */
+    padding: 0 12px 10px 12px; /* Padding uniforme */
     overflow-y: auto; /* Habilita rolagem vertical APENAS nesta área */
     flex-grow: 1; /* Faz esta área ocupar o espaço vertical restante em #controls */
     /* Isso é crucial para o layout com max-height em mobile */
