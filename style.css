@@ -301,7 +301,7 @@ body {
     flex-direction: column; /* <<< MUDA PARA COLUNA: Categorias ACIMA do botão Traçar Rota */
     align-items: stretch; /* <<< FAZ ITENS ESTICAREM HORIZONTALMENTE */
     gap: 4px; /* <<< Adiciona espaço vertical entre categorias e botão Traçar Rota */
-    padding: 5px; /* Ajuste o padding se necessário */
+    padding: 2px; /* Ajuste o padding se necessário */
     border-bottom: 1px solid #eee;
 }
     /* NOVAS Regras para Categorias dentro de @media (max-width: 768px) */
@@ -364,7 +364,7 @@ body {
         /* Pode precisar de um pouco mais de espaço % em telas muito estreitas */
         max-height: 50vh;
     }
-    #controls > h2 { font-size: 1em; padding: 10px 15px 8px 15px; }
+    #controls > h2 { font-size: 1em; padding: 10px 15px 2px 15px; }
     .category-btn { font-size: 0.8em; padding: 6px 3px; margin-bottom: 4px;}
     #route-found-btn { font-size: 0.85em; padding: 8px;}
     #scrollable-controls #search-input,
