@@ -295,11 +295,51 @@ body {
         /* display: flex e flex-direction: column já definidos */
     }
 
-    /* Área superior (categorias/botão rota) deixa de ser sticky em mobile */
-    #controls #top-controls-area {
-        position: static; /* Comportamento normal de fluxo */
-        border-bottom: 1px solid #eee; /* Mantém separador visual */
-    }
+    /* Regra NOVA para #top-controls-area dentro de @media (max-width: 768px) */
+#controls #top-controls-area {
+    position: static; /* Continua não-sticky */
+    flex-direction: column; /* <<< MUDA PARA COLUNA: Categorias ACIMA do botão Traçar Rota */
+    align-items: stretch; /* <<< FAZ ITENS ESTICAREM HORIZONTALMENTE */
+    gap: 10px; /* <<< Adiciona espaço vertical entre categorias e botão Traçar Rota */
+    padding: 10px; /* Ajuste o padding se necessário */
+    border-bottom: 1px solid #eee;
+}
+    /* NOVAS Regras para Categorias dentro de @media (max-width: 768px) */
+
+/* Container interno dos botões vira flex row com wrap */
+#controls #top-controls-area #category-buttons {
+    display: flex;
+    flex-wrap: wrap; /* <<< PERMITE QUEBRA DE LINHA */
+    justify-content: space-between; /* <<< Espaça botões, ajuste se preferir 'flex-start' ou 'space-around' */
+    gap: 6px; /* Espaço entre os botões (vertical e horizontal) */
+    width: 100%; /* Garante ocupar a largura */
+}
+
+/* Define a largura de cada botão de categoria */
+#controls #top-controls-area .category-btn {
+    /* Calcula largura para caberem ~4 por linha, considerando o gap */
+    /* Ex: 100% / 4 = 25%. Tiramos um pouco para o gap. */
+    flex-basis: calc(25% - 6px); /* <<< LARGURA BASE PARA 4 POR LINHA (ajuste o 6px se mudar o gap) */
+    flex-grow: 1; /* Permite que cresçam um pouco se houver espaço */
+    margin-bottom: 0; /* Remove margem inferior padrão, usaremos gap */
+    padding: 6px 2px; /* Padding menor para botões menores */
+    font-size: 0.75em; /* Fonte menor ainda */
+    min-width: 60px; /* Largura mínima para não ficarem muito espremidos */
+}
+
+/* Ajusta o container do botão Traçar Rota */
+#controls #top-controls-area #route-found-button-container {
+    padding-left: 0; /* Remove padding esquerdo desnecessário */
+    width: 100%; /* Ocupa toda a largura */
+    margin-top: 5px; /* Pequena margem acima dele */
+}
+
+/* Faz o botão Traçar Rota ocupar a largura */
+#controls #top-controls-area #route-found-btn {
+     width: 100%; /* Botão ocupa largura total */
+     padding: 10px 5px; /* Ajusta padding */
+}
+/* --- Fim das NOVAS Regras --- */
 
     /* Garante que a área rolável funcione dentro da altura limitada de #controls */
     #controls #scrollable-controls {
