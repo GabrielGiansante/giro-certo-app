@@ -318,7 +318,7 @@ body {
 
 /* Regra para .category-btn DENTRO de @media (max-width: 768px) - DEVE ESTAR ASSIM */
 #controls #top-controls-area .category-btn {
-    flex-basis: calc(25% - 5px); /* Largura para 4 colunas (ajustei o gap para 5px aqui, combine com o gap acima) */
+    flex-basis: calc(25% - 4px); /* Largura para 4 colunas (ajustei o gap para 5px aqui, combine com o gap acima) */
     flex-grow: 1; /* Permite crescer um pouco */
     margin-bottom: 0; /* Usa gap */
     padding: 6px 2px;
