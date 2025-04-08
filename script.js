@@ -291,17 +291,43 @@ function setupEventListeners() {
             if(routeFoundBtn) routeFoundBtn.disabled = true;
             clearFoundMarkers(); // Limpa anteriores
 
-            let request;
-            if (currentUserLocation) {
-                console.log("--- Buscando perto (nearbySearch) ---");
-                request = { location: currentUserLocation, radius: 5000, keyword: categoryType };
-                placesService.nearbySearch(request, handleSearchResults);
+            // Bloco NOVO (Define request com lógica para 'bar' usando PROMINENCE)
+        let request;
+        if (currentUserLocation) {
+            // TEM localização do usuário, usa nearbySearch
+            if (categoryType === 'bar') {
+                // Se for bar, usa PROMINENCE
+                console.log("--- Buscando BARES PRÓXIMOS por PROMINÊNCIA ---");
+                request = {
+                    location: currentUserLocation,
+                    rankBy: google.maps.places.RankBy.PROMINENCE, // <<< PROMINENCE
+                    keyword: categoryType
+                    // NÃO PODE TER RADIUS AQUI
+                };
             } else {
-                console.log("--- Buscando na área visível (textSearch) ---");
-                if (!map.getBounds()) { alert("Área do mapa indefinida."); return; }
-                request = { bounds: map.getBounds(), query: categoryType };
-                placesService.textSearch(request, handleSearchResults);
+                // Se for outra categoria, usa RADIUS
+                console.log(`--- Buscando ${categoryType} perto (nearbySearch com raio) ---`);
+                request = {
+                    location: currentUserLocation,
+                    radius: 5000, // <<< RADIUS
+                    keyword: categoryType
+                };
             }
+            // Chama nearbySearch com a request apropriada
+            placesService.nearbySearch(request, handleSearchResults); // <<< Chama handleSearchResults REAL
+
+        } else {
+            // NÃO TEM localização do usuário, usa textSearch com bounds
+            console.log("--- Buscando na área visível (textSearch) ---");
+            if (!map.getBounds()) { alert("Área do mapa indefinida."); return; }
+            // Para textSearch, 'query' geralmente é melhor que 'keyword' ou 'type'
+            request = {
+                bounds: map.getBounds(),
+                query: categoryType // <<< Usa query
+            };
+            placesService.textSearch(request, handleSearchResults); // <<< Chama handleSearchResults REAL
+        }
+// --- Fim do Bloco NOVO ---
         });
     });
 
