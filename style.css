@@ -306,25 +306,26 @@ body {
 }
     /* NOVAS Regras para Categorias dentro de @media (max-width: 768px) */
 
-/* Container interno dos botões vira flex row com wrap */
+/* Regra CORRIGIDA para #category-buttons dentro de @media (max-width: 768px) */
 #controls #top-controls-area #category-buttons {
     display: flex;
-    flex-wrap: wrap; /* <<< PERMITE QUEBRA DE LINHA */
-    justify-content: space-between; /* <<< Espaça botões, ajuste se preferir 'flex-start' ou 'space-around' */
-    gap: 6px; /* Espaço entre os botões (vertical e horizontal) */
-    width: 100%; /* Garante ocupar a largura */
+    flex-direction: row; /* GARANTE A DIREÇÃO HORIZONTAL */
+    flex-wrap: wrap;     /* PERMITE QUEBRA DE LINHA */
+    justify-content: flex-start; /* Alinha itens no início da linha (ou space-between se preferir) */
+    gap: 6px;            /* Espaço entre os botões */
+    width: 100%;
 }
 
-/* Define a largura de cada botão de categoria */
+/* Regra para .category-btn DENTRO de @media (max-width: 768px) - DEVE ESTAR ASSIM */
 #controls #top-controls-area .category-btn {
-    /* Calcula largura para caberem ~4 por linha, considerando o gap */
-    /* Ex: 100% / 4 = 25%. Tiramos um pouco para o gap. */
-    flex-basis: calc(25% - 6px); /* <<< LARGURA BASE PARA 4 POR LINHA (ajuste o 6px se mudar o gap) */
-    flex-grow: 1; /* Permite que cresçam um pouco se houver espaço */
-    margin-bottom: 0; /* Remove margem inferior padrão, usaremos gap */
-    padding: 6px 2px; /* Padding menor para botões menores */
-    font-size: 0.75em; /* Fonte menor ainda */
-    min-width: 60px; /* Largura mínima para não ficarem muito espremidos */
+    flex-basis: calc(25% - 5px); /* Largura para 4 colunas (ajustei o gap para 5px aqui, combine com o gap acima) */
+    flex-grow: 1; /* Permite crescer um pouco */
+    margin-bottom: 0; /* Usa gap */
+    padding: 6px 2px;
+    font-size: 0.75em;
+    min-width: 60px;
+    text-align: center; /* Garante texto centralizado */
+    box-sizing: border-box; /* Importante para calc() */
 }
 
 /* Ajusta o container do botão Traçar Rota */
