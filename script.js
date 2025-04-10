@@ -274,9 +274,9 @@ function setupEventListeners() {
     if (missingElement) { console.error(`ERRO FATAL: Elemento "${missingElement}" não encontrado!`); return; }
     if (!backButton) { console.warn("AVISO: Botão #back-button não encontrado."); }
 
-    // --- Configuração Autocomplete (SIMPLIFICADO) ---
-    // ... (código do autocomplete como antes) ...
-    setTimeout(() => { /* ... código autocomplete ... */ }, 500);
+    // --- Configuração Autocomplete (SIMPLIFICADO - Placeholder) ---
+    // O código real do Autocomplete será adicionado na etapa correta
+    // setTimeout(() => { /* ... código autocomplete ... */ }, 500);
 
 
     // --- Listener Botões de Categoria ---
@@ -305,136 +305,121 @@ function setupEventListeners() {
         });
     });
 
-    // --- Listener Botão "Traçar Rota" (FUNCIONALIDADE DESATIVADA) ---
-     // Bloco NOVO e COMPLETO para o Listener do Botão "Traçar Rota"
-// --- Listener Botão "Traçar Rota" (Busca por Categoria - REATIVADO) ---
-if (routeFoundBtn) {
-    routeFoundBtn.addEventListener('click', function() {
-        console.log(`>>> [Traçar Rota Clicado] Iniciando. Número de foundMarkers: ${foundMarkers.length}`);
+    // --- Listener Botão "Traçar Rota" (Original, com modo mapa) ---
+    if (routeFoundBtn) {
+        routeFoundBtn.addEventListener('click', function() {
+            console.log(`>>> [Traçar Rota Clicado] Iniciando. Número de foundMarkers: ${foundMarkers.length}`);
 
-        // --- Verificações Iniciais ---
-        // Verifica se os serviços de Direções estão prontos (foram inicializados em initializeMapAndServices)
-        if (!directionsService || !directionsRenderer) {
-            alert("ERRO: Serviço de rotas (Directions) não está pronto. Recarregue a página.");
-            console.error("Traçar rota: Directions Service/Renderer indisponível.", { directionsService, directionsRenderer });
-            return;
-        }
-        // Verifica se há marcadores encontrados para traçar a rota
-        if (!foundMarkers || foundMarkers.length === 0) {
-            alert("Nenhum local encontrado para incluir na rota. Faça uma busca por categoria primeiro.");
-            console.warn("Traçar rota: Tentativa sem foundMarkers.");
-            return; // Não há o que traçar
-        }
-        // Verifica mapa
-        if (!map || typeof map.setCenter !== 'function') {
-             alert("ERRO: Mapa não está pronto."); console.error("Traçar rota: Mapa inválido."); return;
-        }
+            // --- Verificações Iniciais ---
+            if (!directionsService || !directionsRenderer) {
+                alert("ERRO: Serviço de rotas (Directions) não está pronto."); return;
+            }
+            if (!foundMarkers || foundMarkers.length === 0) {
+                alert("Nenhum local encontrado para incluir na rota."); return;
+            }
+            if (!map || typeof map.setCenter !== 'function') {
+                 alert("ERRO: Mapa não está pronto."); return;
+            }
 
-        console.log(">>> [Traçar Rota Clicado] Verificações OK. Solicitando localização...");
-        this.disabled = true; // Desabilita o botão durante o processo
-        this.textContent = "Localizando..."; // Feedback visual
+            console.log(">>> [Traçar Rota Clicado] Verificações OK. Solicitando localização...");
+            this.disabled = true; this.textContent = "Localizando...";
 
-        // --- Solicita Localização Atual ---
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => { // SUCESSO ao obter localização
-                    this.textContent = "Calculando Rota..."; // Atualiza feedback
-                    const userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    currentUserLocation = userPos; // Atualiza global
-                    console.log(">>> [Traçar Rota Clicado] Localização obtida:", userPos);
+            // --- Solicita Localização Atual ---
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => { // SUCESSO ao obter localização
+                        this.textContent = "Calculando Rota...";
+                        const userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        currentUserLocation = userPos;
+                        console.log(">>> [Traçar Rota Clicado] Localização obtida:", userPos);
+                        updateUserMarkerAndAccuracy(position);
 
-                    // Atualiza/Cria o marcador (seta) do usuário no mapa
-                    console.log(">>> [Traçar Rota Clicado] Atualizando marcador do usuário...");
-                    updateUserMarkerAndAccuracy(position);
+                        // --- Prepara e Calcula a Rota ---
+                        console.log(">>> [Traçar Rota Clicado] Preparando cálculo da rota...");
+                        if (directionsRenderer) directionsRenderer.setDirections({ routes: [] });
 
-                    // --- Prepara e Calcula a Rota ---
-                    console.log(">>> [Traçar Rota Clicado] Preparando cálculo da rota...");
-                    if (directionsRenderer) directionsRenderer.setDirections({ routes: [] }); // Limpa rota anterior visualmente
+                        // LIMITA WAYPOINTS
+                        const MAX_ALLOWED_WAYPOINTS = 10;
+                        const markersForRoute = foundMarkers.slice(0, MAX_ALLOWED_WAYPOINTS + 1);
+                        console.log(`>>> [Traçar Rota Clicado] Limitando a ${markersForRoute.length} locais.`);
+                        const waypointsLimited = markersForRoute.map(m => ({ location: m.getPosition(), stopover: true }));
 
-                    // LIMITA WAYPOINTS
-                    const MAX_ALLOWED_WAYPOINTS = 10; // Limite seguro
-                    const markersForRoute = foundMarkers.slice(0, MAX_ALLOWED_WAYPOINTS + 1);
-                    console.log(`>>> [Traçar Rota Clicado] Limitando a ${markersForRoute.length} locais (máx ${MAX_ALLOWED_WAYPOINTS + 1}).`);
-                    const waypointsLimited = markersForRoute.map(m => ({ location: m.getPosition(), stopover: true }));
+                        let originPoint = userPos;
+                        let destinationPoint;
+                        let waypointsForRequest = [];
 
-                    let originPoint = userPos;
-                    let destinationPoint;
-                    let waypointsForRequest = [];
-
-                    if (waypointsLimited.length === 0) {
-                         alert("Erro interno: Nenhum marcador válido para rota."); console.error("Traçar rota: waypointsLimited vazio.");
-                         this.disabled = false; this.textContent = "Traçar Rota"; return;
-                    } else if (waypointsLimited.length === 1) {
-                         destinationPoint = waypointsLimited[0].location; // Destino único
-                    } else {
-                         destinationPoint = waypointsLimited[waypointsLimited.length - 1].location; // Último como destino
-                         waypointsForRequest = waypointsLimited.slice(0, -1); // Restante como waypoints
-                    }
-
-                    const request = {
-                        origin: originPoint, destination: destinationPoint, waypoints: waypointsForRequest,
-                        optimizeWaypoints: true, travelMode: google.maps.TravelMode.DRIVING
-                    };
-
-                    console.log(">>> [Traçar Rota Clicado] Enviando requisição de rota:", request);
-                    directionsService.route(request, (result, status) => { // Callback da Rota
-                        if (status === google.maps.DirectionsStatus.OK) {
-                            console.log(">>> [Traçar Rota Clicado] Rota calculada com SUCESSO.");
-                            directionsRenderer.setDirections(result); // Mostra a rota no mapa
-                            currentRouteResult = result; // Guarda para possível recálculo
-                            currentRouteRequest = request;
-                            isRecalculating = false;
-
-                            // --- Entrar no Modo Mapa ---
-                            console.log(">>> [Traçar Rota Clicado] Entrando no Modo Mapa...");
-                            if (appContainer) {
-                                appContainer.classList.add('map-only-mode');
-                                // Atraso para transição CSS e redimensionamento do mapa
-                                setTimeout(() => {
-                                    if (map) {
-                                        google.maps.event.trigger(map, 'resize'); // Força redimensionamento
-                                        if (result.routes && result.routes[0] && result.routes[0].bounds) {
-                                             map.fitBounds(result.routes[0].bounds); // Ajusta zoom à rota
-                                        }
-                                        console.log(">>> [Traçar Rota Clicado] Mapa redimensionado para Modo Mapa.");
-                                    }
-                                }, 350); // Ajuste o tempo se necessário (ex: 400)
-                            } else { console.warn(">>> [Traçar Rota Clicado] appContainer não encontrado para modo mapa."); }
-
-                            this.textContent = "Rota Traçada"; // Botão indica sucesso (não reabilitar aqui)
-
-                        } else { // ERRO NO CÁLCULO DA ROTA
-                            console.error(`!!! [Traçar Rota Clicado] Erro ao calcular a rota: ${status}`);
-                            alert(`Não foi possível calcular a rota: ${status}. Tente com menos locais ou verifique a conexão.`);
-                            currentRouteResult = null; currentRouteRequest = null;
-                            this.disabled = foundMarkers.length === 0; // Reabilita se ainda há marcadores
-                            this.textContent = "Traçar Rota";
+                        if (waypointsLimited.length === 0) {
+                             alert("Erro interno: Nenhum marcador válido para rota."); this.disabled = false; this.textContent = "Traçar Rota"; return;
+                        } else if (waypointsLimited.length === 1) {
+                             destinationPoint = waypointsLimited[0].location;
+                        } else {
+                             destinationPoint = waypointsLimited[waypointsLimited.length - 1].location;
+                             waypointsForRequest = waypointsLimited.slice(0, -1);
                         }
-                    }); // Fim callback directionsService.route
 
-                }, (error) => { // ERRO AO OBTER LOCALIZAÇÃO NO CLIQUE
-                    console.error("!!! [Traçar Rota Clicado] Erro ao obter localização:", error);
-                    handleLocationError(error, false); // Chama nosso handler
-                    alert("Não foi possível obter sua localização para traçar a rota. Verifique as permissões.");
-                    this.disabled = foundMarkers.length === 0; // Reabilita se ainda há marcadores
-                    this.textContent = "Traçar Rota";
-                },
-                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 } // Opções geo
-            ); // Fim getCurrentPosition
-        } else { // Navegador não suporta geolocalização
-            alert("Geolocalização não é suportada neste navegador para traçar a rota.");
-            this.disabled = foundMarkers.length === 0; // Reabilita se ainda há marcadores
-            this.textContent = "Traçar Rota";
-        }
-    }); // Fim listener routeFoundBtn
-} // Fim if(routeFoundBtn)
-// --- Fim do Bloco NOVO ---
+                        const request = {
+                            origin: originPoint, destination: destinationPoint, waypoints: waypointsForRequest,
+                            optimizeWaypoints: true, // Otimização LIGADA (original)
+                            travelMode: google.maps.TravelMode.DRIVING
+                        };
 
-     // --- Listeners Manuais (FUNCIONALIDADE DESATIVADA) ---
+                        console.log(">>> [Traçar Rota Clicado] Enviando requisição de rota:", request);
+                        directionsService.route(request, (result, status) => { // Callback da Rota
+                            if (status === google.maps.DirectionsStatus.OK) {
+                                console.log(">>> [Traçar Rota Clicado] Rota calculada com SUCESSO.");
+                                directionsRenderer.setDirections(result);
+                                // As variáveis currentRouteResult/Request SÃO definidas aqui no original
+                                currentRouteResult = result;
+                                currentRouteRequest = request;
+                                isRecalculating = false;
+
+                                // --- Entrar no Modo Mapa ---
+                                console.log(">>> [Traçar Rota Clicado] Entrando no Modo Mapa...");
+                                if (appContainer) {
+                                    appContainer.classList.add('map-only-mode'); // ATIVA MODO MAPA
+                                    setTimeout(() => {
+                                        if (map) {
+                                            google.maps.event.trigger(map, 'resize');
+                                            if (result.routes && result.routes[0] && result.routes[0].bounds) {
+                                                 map.fitBounds(result.routes[0].bounds);
+                                            }
+                                            console.log(">>> [Traçar Rota Clicado] Mapa redimensionado.");
+                                        }
+                                    }, 350);
+                                } else { console.warn(">>> [Traçar Rota Clicado] appContainer não encontrado."); }
+
+                                this.textContent = "Rota Traçada";
+
+                            } else { // ERRO NO CÁLCULO DA ROTA
+                                console.error(`!!! [Traçar Rota Clicado] Erro ao calcular a rota: ${status}`);
+                                alert(`Não foi possível calcular a rota: ${status}.`);
+                                currentRouteResult = null; currentRouteRequest = null;
+                                this.disabled = foundMarkers.length === 0;
+                                this.textContent = "Traçar Rota";
+                            }
+                        }); // Fim callback directionsService.route
+
+                    }, (error) => { // ERRO AO OBTER LOCALIZAÇÃO NO CLIQUE
+                        console.error("!!! [Traçar Rota Clicado] Erro ao obter localização:", error);
+                        handleLocationError(error, false);
+                        alert("Não foi possível obter sua localização para traçar a rota.");
+                        this.disabled = foundMarkers.length === 0;
+                        this.textContent = "Traçar Rota";
+                    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+                ); // Fim getCurrentPosition
+            } else { // Navegador não suporta geolocalização
+                alert("Geolocalização não suportada.");
+                this.disabled = foundMarkers.length === 0;
+                this.textContent = "Traçar Rota";
+            }
+        }); // Fim listener routeFoundBtn
+    } // Fim if(routeFoundBtn)
+
+     // --- Listeners Manuais (Original - Desativado) ---
      if (addLocationBtn) { addLocationBtn.addEventListener('click', () => { alert("Adicionar manual desativado."); }); }
      if (selectedLocationsList) { /* ... listener remover desativado ... */ }
 
-    // --- Listener Botão Voltar (FUNCIONALIDADE DESATIVADA) ---
+    // --- Listener Botão Voltar (Original - Desativado) ---
     if (backButton && appContainer) {
         backButton.addEventListener('click', () => {
              alert("Botão Voltar será reativado na próxima etapa.");
@@ -454,7 +439,7 @@ if (routeFoundBtn) {
 function handleSearchResults(results, status) {
     console.log(`>>> handleSearchResults: Status: "${status}". Resultados:`, results ? results.length : 0);
 
-    clearFoundMarkers(); // Limpa DE NOVO antes de adicionar (garantia extra)
+    clearFoundMarkers(); // Limpa DE NOVO antes de adicionar (garantia extra no original)
 
     if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
         let bounds = new google.maps.LatLngBounds();
@@ -475,10 +460,20 @@ function handleSearchResults(results, status) {
         if (validCount > 0) {
              console.log(`>>> handleSearchResults: ${validCount} marcadores adicionados.`);
              if (currentUserLocation) bounds.extend(currentUserLocation);
-             map.fitBounds(bounds); if (map.getZoom() > 16) map.setZoom(16);
+             // Verificação extra adicionada por segurança
+             if (!bounds.isEmpty()) {
+                 try { map.fitBounds(bounds); if (map.getZoom() > 16) map.setZoom(16); }
+                 catch (e) { console.error("Erro fitBounds:", e); }
+             }
              if (routeFoundBtn) routeFoundBtn.disabled = false; console.log(">>> handleSearchResults: Botão Traçar Rota HABILITADO.");
-        } else { /* ... nenhum válido ... */ }
-    } else { /* ... erro ou zero resultados ... */ }
+        } else {
+            console.log(">>> handleSearchResults: Nenhum marcador válido criado.");
+            if (routeFoundBtn) routeFoundBtn.disabled = true; // Desabilita se nenhum foi adicionado
+         }
+    } else {
+         console.warn(`>>> handleSearchResults: Sem resultados ou erro. Status: ${status}`);
+         if (routeFoundBtn) routeFoundBtn.disabled = true; // Desabilita em caso de erro
+     }
     console.log(">>> handleSearchResults: FIM.");
 }
 
