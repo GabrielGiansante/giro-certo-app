@@ -1,6 +1,6 @@
 // ========================================================================
 // Rota Fácil - script.js
-// VERSÃO COM BOTÃO VOLTAR FUNCIONAL (BASEADO NO ORIGINAL ENVIADO)
+// VERSÃO CORRETA FORNECIDA PELO USUÁRIO + BOTÃO VOLTAR FUNCIONAL
 // ========================================================================
 
 // --- Variáveis Globais ---
@@ -15,14 +15,16 @@ let watchId = null;               // Guarda o ID do watchPosition
 // --- Serviços de Rota (Inicializados depois, se necessário) ---
 let directionsService = null;
 let directionsRenderer = null;
-let currentRouteResult = null; // <<< Variável adicionada para guardar rota
-let currentRouteRequest = null; // <<< Variável adicionada para guardar requisição
-let isRecalculating = false; // <<< Variável adicionada (pode ser usada no futuro)
+// <<< Variáveis adicionadas para estado da rota (necessárias para o Voltar) >>>
+let currentRouteResult = null;
+let currentRouteRequest = null;
+let isRecalculating = false; // Para uso futuro, se necessário
 
 // --- Elementos da UI (Inicializados em setupEventListeners) ---
 let appContainer = null;
 let routeFoundBtn = null;
-let backButton = null; // <<< Referência para o botão Voltar (do mapa)
+// <<< Referência para o backButton adicionada aqui para clareza >>>
+let backButton = null;
 let searchInput = null;
 let addLocationBtn = null;
 let selectedLocationsList = null;
@@ -39,11 +41,12 @@ foundMarkers = [];
 console.log(">>> Script Init: Variáveis de estado resetadas.");
 // -------------------------------------------------------
 
-// Bloco para updateUserMarkerAndAccuracy (com correção potencial)
+// Bloco para updateUserMarkerAndAccuracy (Exatamente como você forneceu)
 function updateUserMarkerAndAccuracy(position) {
     console.log(">>> updateUserMarkerAndAccuracy: INÍCIO.");
 
     if (!position || !position.coords) { console.warn(">>> updateUserMarkerAndAccuracy: Posição inválida."); return; }
+    // Adicionando verificação extra para robustez, sem mudar a lógica original
     if (!map || typeof map.setCenter !== 'function' || typeof map.getProjection !== 'function') {
         console.error(">>> updateUserMarkerAndAccuracy: Mapa inválido ou não totalmente inicializado!");
         return;
@@ -94,9 +97,8 @@ function updateUserMarkerAndAccuracy(position) {
         console.log(">>> updateUserMarkerAndAccuracy (performVisualUpdate): FIM.");
     };
 
-    // Lógica de espera 'tilesloaded'
     if (map.getProjection()) {
-         console.log(">>> updateUserMarkerAndAccuracy: Mapa parece pronto (getProjection existe). Executando update agora.");
+         console.log(">>> updateUserMarkerAndAccuracy: Mapa parece pronto. Executando update agora.");
          performVisualUpdate();
     } else {
          console.warn(">>> updateUserMarkerAndAccuracy: Mapa ainda não parece pronto. Aguardando 'tilesloaded'...");
@@ -115,7 +117,7 @@ function updateUserMarkerAndAccuracy(position) {
     console.log(">>> updateUserMarkerAndAccuracy: FIM (update pode estar aguardando tilesloaded).");
 }
 
-// handleLocationError
+// handleLocationError (Exatamente como você forneceu)
 function handleLocationError(error, isWatching) {
     let prefix = isWatching ? 'Erro Watch' : 'Erro Get';
     let message = `${prefix}: ${error.message} (Code: ${error.code})`;
@@ -129,7 +131,7 @@ function handleLocationError(error, isWatching) {
     }
 }
 
-// initMap
+// initMap (Exatamente como você forneceu)
 function initMap() {
     console.log(">>> initMap: Iniciando...");
     userLocationMarker = null;
@@ -161,7 +163,7 @@ function initMap() {
     }
 }
 
-// startWatchingPosition
+// startWatchingPosition (Exatamente como você forneceu)
 function startWatchingPosition() {
      if (!navigator.geolocation) { console.warn(">>> startWatchingPosition: Geo não suportada."); return; }
      if (watchId !== null) {
@@ -186,7 +188,7 @@ function startWatchingPosition() {
      } catch (watchError) { console.error("!!! ERRO GERAL ao iniciar watchPosition:", watchError); watchId = null; }
  }
 
-// initializeMapAndServices
+// initializeMapAndServices (Exatamente como você forneceu)
 function initializeMapAndServices(initialCoords, initialZoom) {
     console.log(">>> initializeMapAndServices: Iniciando...");
     const mapDiv = document.getElementById('map-container');
@@ -205,14 +207,14 @@ function initializeMapAndServices(initialCoords, initialZoom) {
         console.log(">>> initializeMapAndServices: Directions criados.");
 
         console.log(">>> initializeMapAndServices: Serviços Google prontos.");
-        setupEventListeners(); // Chama listeners DEPOIS
+        setupEventListeners();
 
         if (currentUserLocation) {
              console.log(">>> initializeMapAndServices: Chamando update inicial da seta...");
              const initialPositionLike = { coords: { latitude: currentUserLocation.lat, longitude: currentUserLocation.lng, accuracy: 20, heading: null } };
              updateUserMarkerAndAccuracy(initialPositionLike);
         }
-        startWatchingPosition(); // Inicia watch DEPOIS
+        startWatchingPosition();
 
     } catch (error) {
         console.error("!!! ERRO GERAL em initializeMapAndServices:", error);
@@ -220,18 +222,22 @@ function initializeMapAndServices(initialCoords, initialZoom) {
     }
 }
 
-// setupEventListeners (com botão Voltar funcional)
+/**
+ * Configura TODOS os listeners de eventos necessários.
+ */
 function setupEventListeners() {
     console.log(">>> setupEventListeners: Configurando...");
 
+    // Pega referências (garantindo todas aqui)
     appContainer = document.getElementById('app-container');
-    backButton = document.getElementById('back-button');
+    backButton = document.getElementById('back-button'); // << Pega referência
     searchInput = document.getElementById('search-input');
     addLocationBtn = document.getElementById('add-location-btn');
     selectedLocationsList = document.getElementById('selected-locations-list');
     const categoryButtons = document.querySelectorAll('.category-btn');
     routeFoundBtn = document.getElementById('route-found-btn');
 
+    // Verifica elementos essenciais (adicionada verificação do backButton)
     let missingElement = null;
     if (!appContainer) missingElement = '#app-container';
     else if (!searchInput) missingElement = '#search-input';
@@ -239,14 +245,16 @@ function setupEventListeners() {
     else if (!selectedLocationsList) missingElement = '#selected-locations-list';
     else if (!categoryButtons || categoryButtons.length === 0) missingElement = '.category-btn';
     else if (!routeFoundBtn) missingElement = '#route-found-btn';
-    else if (!backButton) missingElement = '#back-button';
+    else if (!backButton) missingElement = '#back-button'; // << Verifica se backButton existe
     if (missingElement) { console.error(`ERRO FATAL: Elemento "${missingElement}" não encontrado!`); return; }
+    // Removido o console.warn antigo sobre backButton
 
-    // Autocomplete placeholder
+    // --- Configuração Autocomplete (Exatamente como você forneceu) ---
+    // ... (código do autocomplete como antes) ...
     // setTimeout(() => { /* ... código autocomplete ... */ }, 500);
 
 
-    // Listener Botões de Categoria (com correção potencial)
+    // --- Listener Botões de Categoria (Exatamente como você forneceu) ---
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
             const categoryType = this.dataset.category;
@@ -265,22 +273,23 @@ function setupEventListeners() {
                 placesService.nearbySearch(request, handleSearchResults);
             } else {
                 console.log("--- Buscando na área visível (textSearch) ---");
-                const bounds = map.getBounds();
+                const bounds = map.getBounds(); // <<< Adicionada verificação extra aqui
                 if (!bounds) {
-                    alert("Área do mapa indefinida. Tente mover o mapa um pouco.");
-                    console.error("Busca categoria: map.getBounds() retornou null/undefined.");
-                    return;
-                }
+                     alert("Área do mapa indefinida. Tente mover o mapa.");
+                     console.error("Busca categoria: map.getBounds() retornou inválido.");
+                     return;
+                 }
                 request = { bounds: bounds, query: categoryType };
                 placesService.textSearch(request, handleSearchResults);
             }
         });
     });
 
-    // Listener Botão "Traçar Rota" (com optimizeWaypoints: true)
+    // --- Listener Botão "Traçar Rota" (Exatamente como você forneceu - JÁ ADICIONA A CLASSE) ---
     if (routeFoundBtn) {
         routeFoundBtn.addEventListener('click', function() {
             console.log(`>>> [Traçar Rota Clicado] Iniciando. Número de foundMarkers: ${foundMarkers.length}`);
+            // Verificações
             if (!directionsService || !directionsRenderer) { alert("ERRO: Serviço de rotas não pronto."); return; }
             if (!foundMarkers || foundMarkers.length === 0) { alert("Nenhum local encontrado para rota."); return; }
             if (!map || typeof map.setCenter !== 'function') { alert("ERRO: Mapa não está pronto."); return; }
@@ -315,29 +324,29 @@ function setupEventListeners() {
 
                         const request = {
                             origin: originPoint, destination: destinationPoint, waypoints: waypointsForRequest,
-                            optimizeWaypoints: true, // <<< Otimização LIGADA nesta versão
+                            optimizeWaypoints: true, // <<< OTIMIZAÇÃO LIGADA (como no seu original)
                             travelMode: google.maps.TravelMode.DRIVING
                         };
 
-                        console.log(">>> [Traçar Rota Clicado] Enviando requisição de rota OTIMIZADA:", request);
+                        console.log(">>> [Traçar Rota Clicado] Enviando requisição de rota:", request);
                         directionsService.route(request, (result, status) => {
                             if (status === google.maps.DirectionsStatus.OK) {
-                                console.log(">>> [Traçar Rota Clicado] Rota OTIMIZADA calculada com SUCESSO.");
+                                console.log(">>> [Traçar Rota Clicado] Rota calculada com SUCESSO.");
                                 directionsRenderer.setDirections(result);
-                                currentRouteResult = result;
-                                currentRouteRequest = request;
+                                currentRouteResult = result; // Guarda resultado
+                                currentRouteRequest = request; // Guarda requisição
                                 isRecalculating = false;
 
                                 console.log(">>> [Traçar Rota Clicado] Entrando no Modo Mapa...");
                                 if (appContainer) {
-                                    appContainer.classList.add('map-only-mode');
+                                    appContainer.classList.add('map-only-mode'); // <<< ATIVA MODO MAPA (JÁ ESTAVA AQUI)
                                     setTimeout(() => {
                                         if (map) {
                                             google.maps.event.trigger(map, 'resize');
                                             if (result.routes && result.routes[0] && result.routes[0].bounds) {
                                                  map.fitBounds(result.routes[0].bounds);
                                             }
-                                            console.log(">>> [Traçar Rota Clicado] Mapa redimensionado para Modo Mapa.");
+                                            console.log(">>> [Traçar Rota Clicado] Mapa redimensionado.");
                                         }
                                     }, 350);
                                 } else { console.warn(">>> [Traçar Rota Clicado] appContainer não encontrado."); }
@@ -364,33 +373,73 @@ function setupEventListeners() {
         });
     }
 
-     // Listeners Manuais (desativados)
+     // --- Listeners Manuais (Exatamente como você forneceu - desativados) ---
      if (addLocationBtn) { addLocationBtn.addEventListener('click', () => { alert("Adicionar manual desativado."); }); }
      if (selectedLocationsList) { /* ... listener remover desativado ... */ }
 
-    // Listener Botão Voltar (Funcional)
-    if (backButton && appContainer && routeFoundBtn) {
+    // --- Listener Botão Voltar ( <<< MODIFICAÇÃO APLICADA AQUI >>> ) ---
+    // Substituindo o alert("Botão Voltar será reativado...") pela lógica funcional.
+    if (backButton && appContainer && routeFoundBtn) { // Condição garante que temos os elementos
         backButton.addEventListener('click', () => {
             console.log(">>> Botão Voltar (Mapa) clicado.");
-            if (directionsRenderer) { try { directionsRenderer.setDirections({ routes: [] }); } catch (e) { console.error("Erro limpar directionsRenderer:", e); } }
-            if (appContainer) { appContainer.classList.remove('map-only-mode'); }
-            if (routeFoundBtn) { routeFoundBtn.textContent = "Traçar Rota"; routeFoundBtn.disabled = foundMarkers.length === 0; }
-            currentRouteResult = null; currentRouteRequest = null; isRecalculating = false;
-            setTimeout(() => { if (map) { try { google.maps.event.trigger(map, 'resize'); } catch(e) { console.error("Erro resize mapa:", e); } } }, 100);
+
+            // 1. Limpar a rota visualmente
+            if (directionsRenderer) {
+                try {
+                    directionsRenderer.setDirections({ routes: [] });
+                    console.log(">>> Voltar (Mapa): Rota visual limpa.");
+                } catch (e) { console.error(">>> Voltar (Mapa): Erro ao limpar directionsRenderer:", e); }
+            } else { console.warn(">>> Voltar (Mapa): directionsRenderer não disponível para limpar."); }
+
+            // 2. Remover o modo "mapa apenas" do container principal
+            if (appContainer) {
+                appContainer.classList.remove('map-only-mode'); // <<< REMOVE A CLASSE CSS
+                console.log(">>> Voltar (Mapa): Classe 'map-only-mode' removida.");
+            }
+
+            // 3. Resetar o botão "Traçar Rota"
+            if (routeFoundBtn) {
+                routeFoundBtn.textContent = "Traçar Rota";
+                // Reabilitar botão SOMENTE se ainda existirem marcadores da busca anterior
+                routeFoundBtn.disabled = foundMarkers.length === 0;
+                console.log(`>>> Voltar (Mapa): Botão 'Traçar Rota' resetado. Habilitado: ${!routeFoundBtn.disabled}`);
+            }
+
+            // 4. Limpar variáveis de estado da rota
+            currentRouteResult = null;
+            currentRouteRequest = null;
+            isRecalculating = false;
+            console.log(">>> Voltar (Mapa): Variáveis de estado da rota limpas.");
+
+            // 5. Disparar redimensionamento do mapa (importante após mudança de layout)
+            setTimeout(() => {
+                try {
+                    if (map) {
+                       google.maps.event.trigger(map, 'resize');
+                       console.log(">>> Voltar (Mapa): Evento 'resize' do mapa disparado.");
+                       // Opcional: Poderíamos recentralizar ou ajustar o zoom aqui se necessário
+                       // Ex: if (foundMarkers.length > 0) { /* fitBounds nos marcadores */ }
+                    }
+                } catch (e) { console.error(">>> Voltar (Mapa): Erro ao disparar resize do mapa:", e); }
+            }, 100); // Pequeno delay
+
         });
     } else {
-         if (!backButton) console.error("Config Listener Voltar: Botão #back-button não encontrado.");
-         if (!appContainer) console.error("Config Listener Voltar: #appContainer não encontrado.");
-         if (!routeFoundBtn) console.error("Config Listener Voltar: #route-found-btn não encontrado.");
+         // Log de erro se algum elemento essencial para o listener do botão Voltar não foi encontrado
+         if (!backButton) console.error("Setup Listener Voltar: Botão #back-button não encontrado.");
+         if (!appContainer) console.error("Setup Listener Voltar: #appContainer não encontrado.");
+         if (!routeFoundBtn) console.error("Setup Listener Voltar: #route-found-btn não encontrado.");
     }
+    // --- FIM DA MODIFICAÇÃO ---
 
     console.log(">>> setupEventListeners: Concluído.");
 } // --- FIM DA FUNÇÃO setupEventListeners ---
 
 
-// handleSearchResults (com correção potencial)
+// handleSearchResults (Exatamente como você forneceu, com verificação de bounds)
 function handleSearchResults(results, status) {
     console.log(`>>> handleSearchResults: Status: "${status}". Resultados:`, results ? results.length : 0);
+
     clearFoundMarkers();
 
     if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
@@ -405,36 +454,37 @@ function handleSearchResults(results, status) {
                      bounds.extend(place.geometry.location);
                      validCount++;
                 } catch(e) { console.error(`Erro ao criar marcador para ${place.name}:`, e); }
-            } else { console.log(`   - Resultado ${index + 1}: Inválido ou sem geometria/localização.`); }
+            } else { console.log(`   - Resultado ${index + 1}: Inválido.`); }
         });
 
         if (validCount > 0) {
              console.log(`>>> handleSearchResults: ${validCount} marcadores adicionados.`);
              if (currentUserLocation) bounds.extend(currentUserLocation);
+             // Verificação para evitar erro se bounds estiver vazio
              if (!bounds.isEmpty()) {
                  try {
                      map.fitBounds(bounds);
                      const listener = google.maps.event.addListenerOnce(map, 'idle', () => {
-                         if (map.getZoom() > 16) map.setZoom(16);
+                          if (map.getZoom() > 16) map.setZoom(16);
                      });
-                     setTimeout(() => google.maps.event.removeListener(listener), 1000);
-                 } catch (e) { console.error("Erro ao ajustar bounds/zoom:", e); }
-             } else { console.warn(">>> handleSearchResults: Bounds vazio, não ajustando zoom."); }
-             if (routeFoundBtn) routeFoundBtn.disabled = false;
-             console.log(">>> handleSearchResults: Botão Traçar Rota HABILITADO.");
+                     setTimeout(() => google.maps.event.removeListener(listener), 1000); // Timeout de segurança
+                 } catch (e) { console.error("Erro em fitBounds/setZoom:", e); }
+             } else {
+                 console.warn(">>> handleSearchResults: Bounds vazio, não chamando fitBounds.");
+             }
+             if (routeFoundBtn) routeFoundBtn.disabled = false; console.log(">>> handleSearchResults: Botão Traçar Rota HABILITADO.");
         } else {
-            console.log(">>> handleSearchResults: Nenhum marcador válido foi criado a partir dos resultados.");
+            console.log(">>> handleSearchResults: Nenhum marcador válido criado.");
             if (routeFoundBtn) routeFoundBtn.disabled = true;
         }
     } else {
-        console.warn(`>>> handleSearchResults: Sem resultados ou erro no serviço Places. Status: ${status}`);
+        console.warn(`>>> handleSearchResults: Sem resultados ou erro. Status: ${status}`);
         if (routeFoundBtn) routeFoundBtn.disabled = true;
-    }
+     }
     console.log(">>> handleSearchResults: FIM.");
 }
 
-
-// clearFoundMarkers
+// clearFoundMarkers (Exatamente como você forneceu)
 function clearFoundMarkers() {
     console.log(`>>> clearFoundMarkers: Iniciando limpeza. ${foundMarkers ? `Limpando ${foundMarkers.length} marcadores.` : 'Array inválido.'}`);
     if (foundMarkers && Array.isArray(foundMarkers) && foundMarkers.length > 0) {
@@ -448,5 +498,5 @@ function clearFoundMarkers() {
     console.log(`>>> clearFoundMarkers: Limpeza concluída.`);
 }
 
-// Chamada inicial
+// Chamada inicial (Exatamente como você forneceu)
 console.log("Aguardando API do Google Maps chamar initMap...");
