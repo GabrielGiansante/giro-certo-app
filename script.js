@@ -404,56 +404,87 @@ function setupEventListeners() {
 
     // --- Listener Botão Voltar (Lógica interna desativada por enquanto) ---
     // *******************************************************************
-// ***** INÍCIO: LÓGICA DO BOTÃO VOLTAR REATIVADA *****
 // *******************************************************************
-// Verifica se todos os elementos necessários existem
-if (backButton && appContainer && routeFoundBtn && directionsRenderer && map) {
+// ***** INÍCIO: LÓGICA DO BOTÃO VOLTAR (VERSÃO CORRIGIDA E COMPLETA) *****
+// *******************************************************************
+// Verifica se todos os elementos necessários existem antes de adicionar o listener
+if (backButton && appContainer && routeFoundBtn) {
     backButton.addEventListener('click', () => {
         console.log(">>> Botão Voltar (Mapa) clicado.");
 
-        // 1. Limpar a rota visualmente
-        try {
-            directionsRenderer.setDirections({ routes: [] }); // Limpa rota
-            console.log("   Rota visual limpa.");
-        } catch (e) { console.error("   Erro ao limpar directionsRenderer:", e); }
+        // 1. Limpar a rota visualmente (Verifica se directionsRenderer existe)
+        if (directionsRenderer) {
+            try {
+                directionsRenderer.setDirections({ routes: [] });
+                console.log("   Rota visual limpa.");
+            } catch (e) { console.error("   Erro ao limpar directionsRenderer:", e); }
+        } else {
+            console.warn("   directionsRenderer não encontrado para limpar rota.");
+        }
 
-        // 2. Remover o modo "mapa apenas"
-        appContainer.classList.remove('map-only-mode'); // <<< REMOVE A CLASSE CSS
-        console.log("   Classe 'map-only-mode' removida.");
+        // 2. Remover o modo "mapa apenas" (Verifica se appContainer existe)
+        if (appContainer) {
+            appContainer.classList.remove('map-only-mode');
+            console.log("   Classe 'map-only-mode' removida.");
+        } else {
+             console.warn("   appContainer não encontrado para remover classe.");
+        }
 
-        // 3. Resetar o botão "Traçar Rota"
-        routeFoundBtn.textContent = "Traçar Rota";
-        routeFoundBtn.disabled = foundMarkers.length === 0; // Habilita se houver marcadores
-        console.log(`   Botão 'Traçar Rota' resetado. Habilitado: ${!routeFoundBtn.disabled}`);
+        // 3. Resetar o botão "Traçar Rota" (Verifica se routeFoundBtn existe)
+        if (routeFoundBtn) {
+            routeFoundBtn.textContent = "Traçar Rota";
+            routeFoundBtn.disabled = foundMarkers.length === 0; // Habilita se houver marcadores
+            console.log(`   Botão 'Traçar Rota' resetado. Habilitado: ${!routeFoundBtn.disabled}`);
+        } else {
+             console.warn("   routeFoundBtn não encontrado para resetar.");
+        }
 
-        // 4. Limpar variáveis de estado da rota
+        // 4. Limpar variáveis de estado da rota (Seguro fazer sempre)
         currentRouteResult = null;
         currentRouteRequest = null;
         isRecalculating = false;
         console.log("   Variáveis de estado da rota limpas.");
 
-        // 5. Disparar redimensionamento e reajuste do mapa
+        // 5. Disparar redimensionamento e reajuste do mapa (Verifica se map existe)
         setTimeout(() => {
-            try {
-                google.maps.event.trigger(map, 'resize'); console.log("   Evento 'resize' do mapa disparado.");
-                if (foundMarkers.length > 0) { // Reajusta zoom para marcadores
-                    let bounds = new google.maps.LatLngBounds(); if (currentUserLocation) bounds.extend(currentUserLocation);
-                    foundMarkers.forEach(marker => { if (marker.getMap() === map) bounds.extend(marker.getPosition()); });
-                    if (!bounds.isEmpty()) { map.fitBounds(bounds); const listener = google.maps.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > 16) map.setZoom(16); }); setTimeout(() => google.maps.event.removeListener(listener), 1000); }
-                } else if (currentUserLocation) { map.setCenter(currentUserLocation); map.setZoom(15); } // Volta para usuário
-            } catch (e) { console.error("   Erro ao disparar resize/fitBounds do mapa:", e); }
-        }, 150);
+            if (map) {
+                try {
+                    google.maps.event.trigger(map, 'resize');
+                    console.log("   Evento 'resize' do mapa disparado.");
+                    // Reajusta o zoom
+                    if (foundMarkers.length > 0) {
+                        let bounds = new google.maps.LatLngBounds();
+                        if (currentUserLocation) bounds.extend(currentUserLocation);
+                        // Apenas inclui marcadores que ainda estão no mapa
+                        foundMarkers.forEach(marker => { if (marker.getMap() === map) bounds.extend(marker.getPosition()); });
+                        if (!bounds.isEmpty()) {
+                            map.fitBounds(bounds);
+                            const listener = google.maps.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > 16) map.setZoom(16); });
+                            setTimeout(() => { try { google.maps.event.removeListener(listener); } catch(e){} }, 1000);
+                        } else if (currentUserLocation) { // Se bounds ficou vazio, mas temos localização
+                            map.setCenter(currentUserLocation); map.setZoom(15);
+                        }
+                    } else if (currentUserLocation) { // Se não há marcadores
+                         map.setCenter(currentUserLocation); map.setZoom(15);
+                    }
+                } catch (e) { console.error("   Erro ao disparar resize/fitBounds do mapa:", e); }
+            } else {
+                console.warn("   Objeto 'map' não encontrado para resize/fitBounds.");
+            }
+        }, 150); // Delay
     });
-} else { // Logs de erro se elementos essenciais faltarem
+} else { // Logs de erro se elementos essenciais para ADICIONAR o listener faltarem
      if (!backButton) console.error("Setup Listener Voltar: Botão #back-button não encontrado.");
      if (!appContainer) console.error("Setup Listener Voltar: #appContainer não encontrado.");
      if (!routeFoundBtn) console.error("Setup Listener Voltar: #route-found-btn não encontrado.");
-     if (!directionsRenderer) console.error("Setup Listener Voltar: directionsRenderer não encontrado.");
-     if (!map) console.error("Setup Listener Voltar: map não encontrado.");
+     // Não verificamos map e directionsRenderer aqui, pois eles podem não estar prontos AINDA,
+     // mas o listener PRECISA ser adicionado se os elementos HTML existirem.
+     // A verificação de map/directionsRenderer é feita DENTRO do listener de clique.
 }
 // *******************************************************************
 // ***** FIM: LÓGICA DO BOTÃO VOLTAR *****
 // *******************************************************************
+
 
     console.log(">>> setupEventListeners: Concluído.");
 } // --- FIM DA FUNÇÃO setupEventListeners ---
