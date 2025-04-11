@@ -372,7 +372,17 @@ body {
     #scrollable-controls #selected-locations-list li { font-size: 0.85em; padding: 5px 3px;}
     #scrollable-controls #selected-locations-list .remove-btn { padding: 1px 5px; font-size: 0.75em;}
 
-    #back-button { top: 5px; left: 5px; padding: 6px 10px; font-size: 0.8em;} /* Menor e mais próximo do canto */
+    #back-button {
+        top: 5px;
+        /* left: 5px; */ /* Comente ou remova o left */
+        right: 10px; /* << ADICIONE right (ajuste o valor 10px se necessário) */
+        padding: 6px 10px;
+        font-size: 0.8em;
+    } /* Menor e mais próximo do canto */
+
+    #app-container.map-only-mode #back-button {
+    display: block; /* Garante que ele aparece em telas pequenas no modo mapa */
+    }
 }
 
 /* Estilos específicos do Google Maps Autocomplete (para garantir boa aparência) */
