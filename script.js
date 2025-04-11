@@ -272,7 +272,7 @@ function setupEventListeners() {
                                  if (appContainer) {
                                      appContainer.classList.add('map-only-mode'); // Ativa modo mapa
                                      if (backButton) backButton.style.display = 'block'; // <<< ADICIONA ESTA LINHA
-                                     setTimeout(() => { if (map) { google.maps.event.trigger(map, 'resize'); if (result.routes[0].bounds) { map.fitBounds(result.routes[0].bounds); } } }, 350);
+                                     setTimeout(() => { if (map) { //google.maps.event.trigger(map, 'resize'); if (result.routes[0].bounds) { map.fitBounds(result.routes[0].bounds); } } }, 350);
                                  }
                                  this.textContent = "Rota Traçada";
                              } else {
