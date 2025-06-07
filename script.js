@@ -235,47 +235,38 @@ function setupEventListeners() {
             // Quando o usuário escolhe uma imagem...
                    // Quando o usuário escolhe uma imagem...
                 // Quando o usuário escolhe uma imagem...
-                imageInput.addEventListener('change', async (event) => {
-                    const file = event.target.files[0];
-                    if (!file) {
-                        return;
-                    }
-        
-                    scanAddressBtn.textContent = '...';
-                    searchInput.value = 'Processando imagem...';
-                    console.log("OCR PISTA 1: Imagem selecionada. Começando o processo.");
-        
-                    try {
-                        console.log("OCR PISTA 2: Carregando imagem com Jimp...");
-                        const image = await Jimp.read(URL.createObjectURL(file));
-                        console.log("OCR PISTA 3: Imagem carregada. Pré-processando...");
-        
-                        image.greyscale().contrast(1);
-                        console.log("OCR PISTA 4: Imagem pré-processada. Obtendo buffer...");
-        
-                        const processedImageBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
-                        console.log("OCR PISTA 5: Buffer obtido. Chamando Tesseract...");
-        
-                        const { data: { text } } = await Tesseract.recognize(
-                            processedImageBuffer,
-                            'por',
-                            { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) } // Logger melhorado
-                        );
-                        console.log("OCR PISTA 6: Tesseract finalizado. Texto reconhecido:", text);
-                        
-                        if (searchInput) {
-                            searchInput.value = text.replace(/\n/g, ' ');
-                        }
-                        
-                        scanAddressBtn.textContent = '📷';
-        
-                    } catch (err) {
-                        console.error("OCR PISTA 7: ERRO CAPTURADO!", err);
-                        alert("Não foi possível ler o texto da imagem. Erro: " + err.message);
-                        searchInput.value = '';
-                        scanAddressBtn.textContent = '📷';
-                    }
-                });
+                        // Quando o usuário escolhe uma imagem...
+        imageInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            scanAddressBtn.textContent = '...';
+            searchInput.value = 'Reconhecendo texto...';
+            console.log("OCR PISTA 1: Imagem selecionada. Chamando Tesseract DIRETAMENTE.");
+
+            try {
+                const { data: { text } } = await Tesseract.recognize(
+                    file, // Enviando o arquivo original, sem processamento
+                    'por',
+                    { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
+                );
+                console.log("OCR PISTA 6: Tesseract finalizado. Texto reconhecido:", text);
+
+                if (searchInput) {
+                    searchInput.value = text.replace(/\n/g, ' ');
+                }
+
+                scanAddressBtn.textContent = '📷';
+
+            } catch (err) {
+                console.error("OCR PISTA 7: ERRO CAPTURADO!", err);
+                alert("Não foi possível ler o texto da imagem. Erro: " + err.message);
+                searchInput.value = '';
+                scanAddressBtn.textContent = '📷';
+            }
+        });
         } else {
             console.error("ERRO: Botão #scan-address-btn ou #image-input não encontrado!");
         }
