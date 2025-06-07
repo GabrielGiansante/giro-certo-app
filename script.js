@@ -4,6 +4,15 @@
 // ========================================================================
 
 // --- Variáveis Globais ---
+// ...
+
+
+// --- Variáveis para a Câmera com Overlay ---
+let cameraOverlay = null;
+let cameraView = null;
+let captureBtn = null;
+let cancelCaptureBtn = null;
+let stream = null; // Para guardar o stream da câmera
 let map;
 let placesService;
 let foundMarkers = [];            // Guarda marcadores da BUSCA POR CATEGORIA E ADIÇÃO MANUAL
@@ -200,7 +209,11 @@ function setupEventListeners() {
     categoryButtonsContainer = document.getElementById('category-buttons-container');
     filterResultsBtn = document.getElementById('filter-results-btn');
     actionButtonsContainer = document.getElementById('action-buttons-container');
-
+// --- Pega referências dos elementos da Câmera ---
+cameraOverlay = document.getElementById('camera-overlay');
+cameraView = document.getElementById('camera-view');
+captureBtn = document.getElementById('capture-btn');
+cancelCaptureBtn = document.getElementById('cancel-capture-btn');
     // Verifica se todos os elementos essenciais da página existem
     let missingElement = null;
     if (!appContainer) missingElement = '#app-container';
@@ -223,80 +236,16 @@ function setupEventListeners() {
         console.warn("AVISO: Botão #back-button não encontrado."); 
     }
         // --- Listener para o Botão de Scanner OCR ---
-        const scanAddressBtn = document.getElementById('scan-address-btn');
-        const imageInput = document.getElementById('image-input');
-    
-        if (scanAddressBtn && imageInput) {
-            // Quando o botão da câmera é clicado...
-            scanAddressBtn.addEventListener('click', () => {
-                imageInput.click(); // ...clicamos no input de arquivo invisível.
-            });
-    
-            // Quando o usuário escolhe uma imagem...
-                   // Quando o usuário escolhe uma imagem...
-                // Quando o usuário escolhe uma imagem...
-                        // Quando o usuário escolhe uma imagem...
-                // Quando o usuário escolhe uma imagem...
-                imageInput.addEventListener('change', async (event) => {
-                    const file = event.target.files[0];
-                    if (!file) { return; }
-        
-                    scanAddressBtn.textContent = '...';
-                    searchInput.value = 'Reconhecendo texto...';
-        
-                    try {
-                        // --- FASE 1: RECONHECIMENTO ---
-                        const { data: { text: fullText } } = await Tesseract.recognize(
-                            file,
-                            'por',
-                            { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
-                        );
-                        console.log("Texto completo reconhecido:", fullText);
-        
-                        // --- FASE 2: EXTRAÇÃO INTELIGENTE ---
-                        searchInput.value = 'Extraindo endereço...';
-                        
-                        // Quebra o texto completo em linhas individuais
-                        const lines = fullText.split('\n');
-                        
-                        // Palavras-chave que indicam um endereço
-                        const addressKeywords = ['rua', 'av', 'avenida', 'praça', 'alameda', 'travessa', 'cep', 'bairro'];
-                        
-                        let extractedAddress = '';
-        
-                        // Percorre cada linha do texto
-                        for (const line of lines) {
-                            // Verifica se a linha (em minúsculas) contém alguma palavra-chave
-                            const lowerLine = line.toLowerCase();
-                            if (addressKeywords.some(keyword => lowerLine.includes(keyword))) {
-                                extractedAddress += line + ' '; // Adiciona a linha ao nosso endereço final
-                            }
-                        }
-                        
-                        // Se não encontrou nada com palavras-chave, usa o texto todo como último recurso
-                        if (extractedAddress.trim() === '') {
-                            console.log("Nenhuma palavra-chave de endereço encontrada. Usando texto completo.");
-                            extractedAddress = fullText.replace(/\n/g, ' ');
-                        }
-        
-                        console.log("Endereço extraído:", extractedAddress.trim());
-        
-                        if (searchInput) {
-                            searchInput.value = extractedAddress.trim();
-                        }
-        
-                        scanAddressBtn.textContent = '📷';
-        
-                    } catch (err) {
-                        console.error("ERRO CAPTURADO!", err);
-                        alert("Não foi possível ler o texto da imagem. Erro: " + err.message);
-                        searchInput.value = '';
-                        scanAddressBtn.textContent = '📷';
-                    }
-                });
-        } else {
-            console.error("ERRO: Botão #scan-address-btn ou #image-input não encontrado!");
-        }
+           // --- Listener para o Botão de Scanner OCR ---
+    const scanAddressBtn = document.getElementById('scan-address-btn');
+    if (scanAddressBtn) {
+        scanAddressBtn.addEventListener('click', () => {
+            // Em vez de abrir a galeria, chama a função para iniciar a câmera
+            startCamera();
+        });
+    } else {
+        console.error("ERRO: Botão #scan-address-btn não encontrado!");
+    }
     // --- Listener Botões de Categoria (Exatamente como no script base) ---
     // LEMBRETE: Chama clearFoundMarkers(), que limpa TUDO (manuais incluídos).
     categoryButtons.forEach(button => {
@@ -764,3 +713,139 @@ function resetUI() {
 
 // Chamada inicial (Exatamente como no script base)
 console.log("Aguardando API do Google Maps chamar initMap...");
+
+// ========================================================
+// =========  FUNÇÕES PARA A CÂMERA COM OVERLAY  ==========
+// ========================================================
+
+/**
+ * Inicia a câmera do dispositivo e a exibe no overlay.
+ */
+async function startCamera() {
+    // Verifica se os elementos necessários existem
+    if (!cameraOverlay || !cameraView) {
+        alert("Erro: Elementos da câmera não foram encontrados.");
+        return;
+    }
+
+    // Pede permissão e obtém o stream da câmera traseira
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } // Pede a câmera traseira
+        });
+        
+        cameraView.srcObject = stream;
+        cameraView.play();
+        cameraOverlay.classList.remove('hidden'); // Mostra o overlay da câmera
+
+        // Adiciona os listeners para os botões de captura e cancelar
+        captureBtn.onclick = captureImage;
+        cancelCaptureBtn.onclick = stopCamera;
+
+    } catch (err) {
+        console.error("Erro ao acessar a câmera: ", err);
+        alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+    }
+}
+
+/**
+ * Para a transmissão da câmera e esconde o overlay.
+ */
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop()); // Para cada faixa (vídeo, áudio)
+    }
+    cameraOverlay.classList.add('hidden'); // Esconde o overlay
+    stream = null;
+}
+
+/**
+ * Captura um quadro do vídeo, recorta e envia para o OCR.
+ */
+function captureImage() {
+    if (!cameraView) return;
+
+    // Cria um canvas (uma área de desenho) para manipular a imagem
+    const canvas = document.createElement('canvas');
+    const videoWidth = cameraView.videoWidth;
+    const videoHeight = cameraView.videoHeight;
+    
+    // Define as proporções da "janela de corte" (a mesma do CSS)
+    const cropWidthPercent = 0.85; // 85% da largura
+    const cropHeightPercent = 0.35; // 35% da altura
+
+    // Calcula as coordenadas e dimensões do corte
+    const cropWidth = videoWidth * cropWidthPercent;
+    const cropHeight = videoHeight * cropHeightPercent;
+    const cropX = (videoWidth - cropWidth) / 2;
+    const cropY = (videoHeight - cropHeight) / 2;
+
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+
+    // "Desenha" apenas a parte do vídeo que está dentro do retângulo no canvas
+    const context = canvas.getContext('2d');
+    context.drawImage(cameraView, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+    // Para a câmera depois de capturar a imagem
+    stopCamera();
+
+    // Envia a imagem CORTADA para o Tesseract
+    processImageWithTesseract(canvas.toDataURL());
+}
+
+/**
+ * Processa a imagem capturada com o Tesseract.js.
+ */
+async function processImageWithTesseract(imageData) {
+    scanAddressBtn.textContent = '...';
+    searchInput.value = 'Reconhecendo texto...';
+
+    try {
+        const { data: { text } } = await Tesseract.recognize(
+            imageData,
+            'por',
+            { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
+        );
+
+        console.log("Texto completo reconhecido:", text);
+        
+        const extractedAddress = extractAddressFromText(text); // Chama a função de extração
+        console.log("Endereço extraído:", extractedAddress);
+
+        if (searchInput) {
+            searchInput.value = extractedAddress;
+        }
+
+        scanAddressBtn.textContent = '📷';
+
+    } catch (err) {
+        console.error("ERRO no OCR:", err);
+        alert("Não foi possível ler o texto da imagem.");
+        searchInput.value = '';
+        scanAddressBtn.textContent = '📷';
+    }
+}
+
+/**
+ * Extrai o que parece ser um endereço de um bloco de texto.
+ */
+function extractAddressFromText(fullText) {
+    const lines = fullText.split('\n');
+    const addressKeywords = ['rua', 'av', 'av.', 'avenida', 'praça', 'alameda', 'travessa', 'cep', 'bairro', 'nº', 'no.', 'numero'];
+    let extractedAddress = '';
+
+    for (const line of lines) {
+        const lowerLine = line.toLowerCase();
+        if (addressKeywords.some(keyword => lowerLine.includes(keyword))) {
+            extractedAddress += line + ' ';
+        }
+    }
+
+    if (extractedAddress.trim() === '') {
+        console.log("Nenhuma palavra-chave de endereço encontrada. Usando texto completo.");
+        return fullText.replace(/\n/g, ' ');
+    }
+    
+    return extractedAddress.trim();
+}

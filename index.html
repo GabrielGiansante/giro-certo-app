@@ -78,6 +78,28 @@
    
 <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js' defer></script>
     <script src="script.js"></script>
-
+<!-- ======================================================= -->
+<!-- =========  CONTÊINER PARA A CÂMERA AO VIVO  ========= -->
+<!-- ======================================================= -->
+<div id="camera-overlay" class="hidden">
+    <div id="camera-box">
+        <video id="camera-view" playsinline></video>
+        <div id="camera-mask">
+            <div class="mask-top"></div>
+            <div class="mask-middle">
+                <div class="mask-left"></div>
+                <div class="mask-center"></div> <!-- O retângulo transparente -->
+                <div class="mask-right"></div>
+            </div>
+            <div class="mask-bottom"></div>
+        </div>
+        <p id="camera-instructions">Posicione o endereço no retângulo</p>
+    </div>
+    <div id="camera-controls">
+        <button id="capture-btn">Capturar</button>
+        <button id="cancel-capture-btn">Cancelar</button>
+    </div>
+</div>
+<!-- ======================================================= -->
 </body>
 </html>

@@ -457,3 +457,91 @@ body {
    color: #777;
    border-top: 1px solid #eee;
 }
+/* =================================== */
+/* === ESTILOS PARA A CÂMERA AO VIVO === */
+/* =================================== */
+
+/* O contêiner principal que cobre a tela toda */
+#camera-overlay {
+    position: fixed; /* Fica fixo na tela */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1000; /* Garante que fique por cima de tudo */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Esconde o overlay por padrão */
+#camera-overlay.hidden {
+    display: none;
+}
+
+#camera-box {
+    position: relative;
+    width: 95%;
+    max-width: 600px;
+    height: 60%;
+    overflow: hidden;
+}
+
+/* O vídeo da câmera que preenche a caixa */
+#camera-view {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Garante que o vídeo cubra toda a área sem distorcer */
+}
+
+/* A máscara que fica por cima do vídeo */
+#camera-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Partes da máscara */
+.mask-top, .mask-bottom {
+    flex-grow: 1; /* Empurra o meio para o centro */
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto semi-transparente */
+}
+.mask-middle {
+    height: 35%; /* Altura do retângulo de captura */
+    display: flex;
+}
+.mask-left, .mask-right {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+.mask-center {
+    width: 85%; /* Largura do retângulo de captura */
+    border: 2px solid white; /* Borda branca para guiar o usuário */
+}
+
+/* Instruções e controles */
+#camera-instructions {
+    position: absolute;
+    top: 10%;
+    color: white;
+    text-align: center;
+    width: 100%;
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px black;
+}
+#camera-controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+}
+#capture-btn, #cancel-capture-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+}
