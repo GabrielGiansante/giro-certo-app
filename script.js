@@ -233,36 +233,48 @@ function setupEventListeners() {
             });
     
             // Quando o usuário escolhe uma imagem...
-            imageInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) {
-                    return; // O usuário cancelou
+                   // Quando o usuário escolhe uma imagem...
+        imageInput.addEventListener('change', async (event) => { // Adicionamos 'async' aqui
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            scanAddressBtn.textContent = '...';
+            searchInput.value = 'Processando imagem...'; // Mensagem para o usuário
+
+            try {
+                // Carrega a imagem com a biblioteca Jimp
+                const image = await Jimp.read(URL.createObjectURL(file));
+
+                // Pré-processamento: converte para escala de cinza, aumenta o contraste
+                image.greyscale().contrast(1);
+
+                // Obtém a imagem processada para enviar ao Tesseract
+                const processedImageBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
+
+                // Usa o Tesseract.js na imagem JÁ PROCESSADA
+                const { data: { text } } = await Tesseract.recognize(
+                    processedImageBuffer,
+                    'por',
+                    { logger: m => console.log(m) }
+                );
+
+                console.log("Texto reconhecido:", text);
+                
+                if (searchInput) {
+                    searchInput.value = text.replace(/\n/g, ' ');
                 }
-    
-                scanAddressBtn.textContent = '...'; // Mostra que está processando
-    
-                // Usa a biblioteca Tesseract.js para ler o texto da imagem
-                Tesseract.recognize(
-                    file,
-                    'por', // Especifica o idioma (por = português)
-                    {
-                        logger: m => console.log(m) // Mostra o progresso no console
-                    }
-                ).then(({ data: { text } }) => {
-                    console.log("Texto reconhecido:", text);
-                    
-                    // Coloca o texto reconhecido no campo de busca!
-                    if (searchInput) {
-                        searchInput.value = text.replace(/\n/g, ' '); // Remove quebras de linha
-                    }
-                    
-                    scanAddressBtn.textContent = '📷'; // Volta o botão ao normal
-                }).catch(err => {
-                    console.error("Erro no OCR:", err);
-                    alert("Não foi possível ler o texto da imagem.");
-                    scanAddressBtn.textContent = '📷'; // Volta o botão ao normal
-                });
-            });
+                
+                scanAddressBtn.textContent = '📷';
+
+            } catch (err) {
+                console.error("Erro no OCR ou processamento de imagem:", err);
+                alert("Não foi possível ler o texto da imagem.");
+                searchInput.value = ''; // Limpa a mensagem de erro
+                scanAddressBtn.textContent = '📷';
+            }
+        });
         } else {
             console.error("ERRO: Botão #scan-address-btn ou #image-input não encontrado!");
         }
