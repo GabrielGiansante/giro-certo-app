@@ -27,7 +27,12 @@ let searchInput = null; // <<< Campo de busca manual
 let addLocationBtn = null; // <<< Botão de adicionar manual (não terá ação direta)
 let selectedLocationsList = null; // <<< Lista UL para locais manuais
 let autocomplete = null; // <<< Variável para o serviço Autocomplete
-
+let categoryTitle = null; // Para controlar o título H2
+let categoryButtonsContainer = null; // Para controlar o container das categorias
+let filterResultsBtn = null; // Para controlar o botão Filtrar
+let actionButtonsContainer = null; // Para controlar o container dos botões de ação (opcional, mas bom ter)
+let isFilterActive = false; // Para saber se o filtro está ligado ou desligado
+let currentFilterableMarkers = []; // Para guardar os marcadores que podemos filtrar
 // --- Reset Inicial (Exatamente como no script base) ---
 userLocationMarker = null; userLocationAccuracyCircle = null;
 if (navigator.geolocation && typeof watchId !== 'undefined' && watchId !== null) { try { navigator.geolocation.clearWatch(watchId); } catch (e) { console.error(">>> Script Init: Erro ao limpar watchId:", e); } }
@@ -191,8 +196,25 @@ function setupEventListeners() {
     selectedLocationsList = document.getElementById('selected-locations-list'); // Lista UL
     const categoryButtons = document.querySelectorAll('.category-btn');
     routeFoundBtn = document.getElementById('route-found-btn');
-
+    // <<< ADICIONE ESTAS LINHAS >>>
+    categoryTitle = document.getElementById('category-title');
+    categoryButtonsContainer = document.getElementById('category-buttons-container');
+    filterResultsBtn = document.getElementById('filter-results-btn');
+    actionButtonsContainer = document.getElementById('action-buttons-containerÓtimo! Variáveis adicionadas.
     // Verifica elementos essenciais
+    // ... (linha verificando !routeFoundBtn) ...
+// else if (!backButton) missingElement = '#back-button'; // Mantenha esta linha se ela existir
+
+// <<< ADICIONE ESTAS 4 LINHAS ABAIXO >>>
+else if (!categoryTitle) missingElement = '#category-title';
+else if (!categoryButtonsContainer) missingElement = '#category-buttons-container';
+else if (!filterResultsBtn) missingElement = '#filter-results-btn';
+else if (!actionButtonsContainer) missingElement = '#action-buttons-container';
+// <<< FIM DA ADIÇÃO >>>
+
+// A linha abaixo já deve existir:
+if (missingElement) { console.error(`ERRO FATAL: Elemento "${missingElement}" não encontrado!`); return; }
+// ... (o resto do código) ...
     let missingElement = null;
     if (!appContainer) missingElement = '#app-container';
     else if (!searchInput) missingElement = '#search-input'; // ESSENCIAL
@@ -216,16 +238,23 @@ function setupEventListeners() {
 
             // Limpa marcadores anteriores (CATEGORIA E MANUAIS) e a lista visual
             clearFoundMarkers();
+            // <<< ADICIONE ESTAS 2 LINHAS >>>
+            if (categoryTitle) categoryTitle.style.display = 'none';
+            if (categoryButtonsContainer) categoryButtonsContainer.style.display = 'none';
 
             let request;
             if (currentUserLocation) {
                 request = { location: currentUserLocation, radius: 5000, keyword: categoryType };
-                placesService.nearbySearch(request, handleSearchResults);
+                placesService.nearbySearch(request, (results, status) => {
+                    handleSearchResults(results, status, true); // Passa true
+                });
             } else {
                 const bounds = map.getBounds();
                 if (!bounds) { alert("Área do mapa indefinida."); return; }
                 request = { bounds: bounds, query: categoryType };
-                placesService.textSearch(request, handleSearchResults);
+                placesService.textSearch(request, (results, status) => {
+                    handleSearchResults(results, status, false); // Passa false
+                });
             }
         });
     });
@@ -409,14 +438,110 @@ function setupEventListeners() {
              alert("Funcionalidade do Botão Voltar desativada.");
         });
     }
+    // <<< ADICIONE ESTE NOVO BLOCO >>>
+// --- Listener para o Botão de Filtro ---
+if (filterResultsBtn) {
+    filterResultsBtn.addEventListener('click', toggleFilter); // Chama a função toggleFilter quando clicado
+} else {
+    console.error("Setup Listener Filtro: Botão #filter-results-btn não encontrado.");
+}
 
     console.log(">>> setupEventListeners: Concluído.");
 } // --- FIM DA FUNÇÃO setupEventListeners ---
+/**
+ * NOVA FUNÇÃO: Ativa/Desativa o filtro e atualiza a UI do botão.
+ */
+function toggleFilter() {
+    isFilterActive = !isFilterActive; // Inverte o estado do filtro (true vira false, false vira true)
+    console.log(`>>> toggleFilter: Filtro agora está ${isFilterActive ? 'ATIVO' : 'INATIVO'}`);
 
+    applyFilters(); // Chama a função que realmente mostra/esconde os marcadores
+
+    // Atualiza aparência/texto do botão de filtro para refletir o novo estado
+    if (filterResultsBtn) { // Verifica se o botão existe
+        if (isFilterActive) {
+            // Se o filtro foi ATIVADO, muda o texto para indicar como desativar
+            filterResultsBtn.textContent = 'Mostrar todos os resultados';
+            filterResultsBtn.classList.add('active-filter'); // Adiciona classe para CSS (opcional)
+        } else {
+            // Se o filtro foi DESATIVADO, volta o texto original
+            filterResultsBtn.textContent = 'Filtrar por lugares mais relevantes';
+            filterResultsBtn.classList.remove('active-filter'); // Remove classe
+        }
+    }
+}
+/**
+ * NOVA FUNÇÃO: Aplica ou remove filtros nos marcadores da categoria.
+ */
+function applyFilters() {
+    console.log(`>>> applyFilters: Aplicando filtro (Ativo: ${isFilterActive})`);
+    const minRating = 4.0; // Critério: Nota mínima 4.0
+    const minReviews = 15;  // Critério: Mínimo de 15 avaliações
+    let visibleCategoryMarkersCount = 0;
+    let manualMarkersCount = 0;
+
+    // Percorre TODOS os marcadores que temos na lista 'foundMarkers'
+    foundMarkers.forEach(marker => {
+        // Pula se o marcador for inválido ou não tiver a função setVisible
+        if (!marker || typeof marker.setVisible !== 'function') {
+            return;
+        }
+
+        // Verifica se é um marcador adicionado manualmente (nós adicionamos a propriedade 'isManual' nele)
+        if (marker.isManual) {
+            // Marcadores manuais NUNCA são escondidos por este filtro
+            marker.setVisible(true);
+            manualMarkersCount++;
+        }
+        // Verifica se é um marcador de categoria que TEM dados de avaliação guardados
+        else if (marker.placeData) {
+            let shouldShow = true; // Por padrão, o marcador será visível
+
+            // Se o filtro está ATIVO, verifica se o marcador atende aos critérios
+            if (isFilterActive) {
+                // Pega a nota e o número de avaliações (ou usa 0 se não existirem)
+                const rating = marker.placeData.rating || 0;
+                const reviews = marker.placeData.user_ratings_total || 0;
+
+                // Se NÃO atender aos critérios, marca para esconder
+                if (rating < minRating || reviews < minReviews) {
+                    shouldShow = false;
+                }
+            }
+            // Define a visibilidade do marcador (mostra ou esconde)
+            marker.setVisible(shouldShow);
+            if (shouldShow) {
+                visibleCategoryMarkersCount++; // Conta se ficou visível
+            }
+        }
+        // Se for um marcador de categoria que NÃO tem dados de avaliação (ex: veio de textSearch)
+        else {
+             // Mantém esses marcadores sempre visíveis, pois não podemos filtrá-los
+             marker.setVisible(true);
+             visibleCategoryMarkersCount++; // Conta como visível
+        }
+    });
+    console.log(`>>> applyFilters: ${visibleCategoryMarkersCount} marcadores de categoria + ${manualMarkersCount} manuais estão visíveis.`);
+}
 /**
  * NOVA FUNÇÃO: Adiciona um item à lista visual UL.
  */
 function addPlaceToList(name, address, placeId) {
+    console.log(`   Item adicionado à lista UL: ${name}`);
+
+// <<< ADICIONE ESTE BLOCO >>>
+// Marca o marcador correspondente em foundMarkers como manual
+// para que a função applyFilters saiba que não deve escondê-lo.
+const addedMarker = foundMarkers.find(m => m.placeId === placeId);
+if (addedMarker) {
+    addedMarker.isManual = true; // Adiciona uma propriedade para identificação
+    console.log(`   Marcador "${name}" marcado como 'isManual = true'.`);
+} else {
+    // Isso não deveria acontecer se a lógica estiver correta, mas adiciona um aviso
+    console.warn(`   AVISO: Marcador manual com placeId ${placeId} não encontrado em foundMarkers para marcar como manual.`);
+}
+// <<< FIM DO BLOCO ADICIONADO >>>
+} // Esta chave } finaliza a função addPlaceToList
     if (!selectedLocationsList || !placeId) {
         console.error("addPlaceToList: Lista UL ou placeId inválido.");
         return;
@@ -449,8 +574,27 @@ function addPlaceToList(name, address, placeId) {
 
 // handleSearchResults (Exatamente como no script base)
 // Processa resultados da BUSCA POR CATEGORIA
-function handleSearchResults(results, status) {
-    console.log(`>>> handleSearchResults (Categoria): Status: "${status}". Resultados:`, results ? results.length : 0);
+function handleSearchResults(results, status, nearbyUsed) {    console.log(`>>> handleSearchResults (Categoria): Status: "${status}". Resultados:`, results ? results.length : 0);
+console.log(`>>> handleSearchResults (${nearbyUsed ? 'Nearby' : 'TextSearch'}): Status: "${status}". Resultados:`, results ? results.length : 0);
+// <<< ADICIONE ESTE BLOCO >>>
+currentFilterableMarkers = []; // Limpa a lista de marcadores que podem ser filtrados
+
+// Mostra/Esconde botão de filtro baseado se a busca foi 'nearby' e teve resultados
+if (filterResultsBtn) { // Verifica se o botão existe
+    if (nearbyUsed && status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+        filterResultsBtn.style.display = 'block'; // Mostra o botão
+        filterResultsBtn.textContent = 'Filtrar por lugares mais relevantes'; // Texto inicial
+        filterResultsBtn.classList.remove('active-filter'); // Remove estilo de filtro ativo (se houver)
+        isFilterActive = false; // Garante que o filtro comece desativado
+        console.log("   Botão de filtro HABILITADO.");
+    } else {
+        filterResultsBtn.style.display = 'none'; // Esconde o botão
+        console.log("   Botão de filtro DESABILITADO/OCULTO.");
+    }
+}
+// <<< FIM DO BLOCO ADICIONADO >>>
+
+// A linha clearFoundMarkers(); NÃO deve estar aqui (ela é chamada ANTES no listener da categoria)
     // clearFoundMarkers() é chamado ANTES no listener da categoria
 
     if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
@@ -459,11 +603,30 @@ function handleSearchResults(results, status) {
         results.forEach((place, index) => {
             if (place.name && place.geometry && place.geometry.location) {
                 try {
-                     const categoryMarker = new google.maps.Marker({ position: place.geometry.location, map: map, title: place.name });
-                     foundMarkers.push(categoryMarker); // Adiciona ao array geral
-                     bounds.extend(place.geometry.location);
-                     validCount++;
-                } catch(e) { console.error(`Erro marcador categoria ${place.name}:`, e); }
+                    const categoryMarker = new google.maps.Marker({
+                        position: place.geometry.location,
+                        map: map,
+                        // Mostra info extra no 'tooltip' do marcador (ao passar o mouse)
+                        title: `${place.name} (Nota: ${place.rating || 'N/A'}, Avaliações: ${place.user_ratings_total || 0})`
+                    });
+               
+                    // Guarda os dados da API diretamente no objeto marcador para uso posterior
+                    categoryMarker.placeData = {
+                        rating: place.rating, // Pode ser undefined se não houver nota
+                        user_ratings_total: place.user_ratings_total // Pode ser undefined
+                    };
+                    categoryMarker.isManual = false; // Marca que veio da busca por categoria
+               
+                    foundMarkers.push(categoryMarker); // Adiciona à lista principal
+               
+                    // Adiciona à lista de marcadores que PODEM ser filtrados SOMENTE se veio de nearbySearch
+                    if (nearbyUsed) {
+                        currentFilterableMarkers.push(categoryMarker);
+                    }
+               
+                    bounds.extend(place.geometry.location);
+                    validCount++;
+               } catch(e) { console.error(`Erro ao criar marcador categoria para ${place.name}:`, e); }
             }
         });
 
@@ -492,6 +655,15 @@ function handleSearchResults(results, status) {
 // clearFoundMarkers (Exatamente como no script base - Limpa TUDO)
 // Chamado APENAS ao clicar em um botão de CATEGORIA.
 function clearFoundMarkers() {
+    // ... (linha if (routeFoundBtn) { routeFoundBtn.disabled = true; } ) ...
+
+// <<< ADICIONE ESTAS 2 LINHAS >>>
+currentFilterableMarkers = []; // Limpa a lista de marcadores que podiam ser filtrados
+resetUI(); // Chama a função para esconder o filtro e mostrar categorias/título
+
+// A linha abaixo já existe:
+console.log(`>>> clearFoundMarkers: Limpeza concluída.`);
+} // Esta chave } finaliza a função clearFoundMarkers
     console.log(`>>> clearFoundMarkers: Limpando ${foundMarkers.length} marcadores.`);
     if (foundMarkers && foundMarkers.length > 0) {
          try { foundMarkers.forEach((marker) => { if (marker && marker.setMap) { marker.setMap(null); } }); }
@@ -505,6 +677,37 @@ function clearFoundMarkers() {
     if (routeFoundBtn) { routeFoundBtn.disabled = true; } // Desabilita botão
     console.log(`>>> clearFoundMarkers: Limpeza concluída.`);
 }
+/**
+ * NOVA FUNÇÃO: Reseta a UI para o estado inicial (mostra categorias, esconde filtro).
+ * Chamada ao limpar marcadores ou ao voltar do modo de rota.
+ */
+function resetUI() {
+    console.log(">>> resetUI: Resetando interface para estado inicial...");
 
+    // Mostra o título "Escolha a categoria"
+    if (categoryTitle) {
+        categoryTitle.style.display = 'block'; // Ou 'inherit' ou remova o style se o padrão for block
+    } else {
+        console.warn("resetUI: categoryTitle não encontrado.");
+    }
+
+    // Mostra o container dos botões de categoria
+    if (categoryButtonsContainer) {
+        // Use 'flex' se o display padrão for flex, ou 'block' se for block
+        categoryButtonsContainer.style.display = 'flex';
+    } else {
+        console.warn("resetUI: categoryButtonsContainer não encontrado.");
+    }
+
+    // Esconde o botão de filtro
+    if (filterResultsBtn) {
+        filterResultsBtn.style.display = 'none';
+    } else {
+        console.warn("resetUI: filterResultsBtn não encontrado.");
+    }
+
+    // Garante que o estado do filtro está desativado
+    isFilterActive = false;
+}
 // Chamada inicial (Exatamente como no script base)
 console.log("Aguardando API do Google Maps chamar initMap...");

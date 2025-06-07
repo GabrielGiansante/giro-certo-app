@@ -1,0 +1,23 @@
+{
+  "name": "app-de-rotas",
+  "version": "1.0.0",
+  "main": "script.js",
+  "scripts": {
+    "dev": "live-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GabrielGiansante/giro-certo-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GabrielGiansante/giro-certo-app/issues"
+  },
+  "homepage": "https://github.com/GabrielGiansante/giro-certo-app#readme",
+  "description": "",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

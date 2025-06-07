@@ -14,7 +14,7 @@
         <div id="controls">
 
             <!-- TÍTULO PRINCIPAL DOS CONTROLES -->
-            <h2>Escolha a categoria</h2>
+            <h2 id="category-title">Escolha a categoria</h2>
 
             <!-- === ÁREA SUPERIOR FIXA (STICKY) === -->
             <div id="top-controls-area">
@@ -30,11 +30,14 @@
                          <!-- Adicione mais ou ajuste -->
                     </div>
                 </div>
-                <div id="route-found-button-container">
-                    <button id="route-found-btn" class="route-found-button" disabled>Traçar Rota</button>
-                </div>
+                <!-- Container dos BOTÕES DE AÇÃO -->
+            <div id="action-buttons-container">
+                 <button id="route-found-btn" class="route-found-button" disabled>Traçar Rota</button>
+                 <button id="filter-results-btn" style="display: none; margin-top: 5px;">Filtrar por lugares mais relevantes</button>
             </div>
-            <!-- === FIM ÁREA SUPERIOR FIXA === -->
+            
+        
+        </div>    <!-- === FIM ÁREA SUPERIOR FIXA === -->
 
             <!-- === CONTEÚDO ROLÁVEL ABAIXO === -->
             <div id="scrollable-controls">

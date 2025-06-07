@@ -47,7 +47,8 @@ body {
 /* Área Superior com Categorias e Botão Traçar Rota */
 #top-controls-area {
     display: flex; /* Organiza containers de categorias e botão lado a lado */
-    align-items: flex-start; /* Alinha o topo dos containers */
+    flex-direction: column;
+    align-items: stretch; /* Alinha o topo dos containers */
     gap: 10px; /* Espaço horizontal entre categorias e botão */
     position: sticky; /* Fica fixo no topo de #controls ao rolar (DESKTOP) */
     top: 0; /* Posição do sticky */
@@ -93,12 +94,46 @@ body {
 }
 .category-btn:hover { background-color: #0056b3; }
 
-/* Contêiner do botão "Traçar Rota" (da busca/categoria) */
-#top-controls-area #route-found-button-container {
-    flex-shrink: 0; /* Não encolhe */
+/* Container dos Botões de Ação (Traçar Rota, Filtrar) */
+#action-buttons-container {
     display: flex;
-    align-items: flex-start; /* Alinha o botão ao topo */
-    padding-left: 5px; /* Espaço à esquerda reduzido */
+    flex-direction: column; /* Empilha Traçar Rota e Filtrar */
+    gap: 5px; /* Espaço entre os botões de ação */
+    width: 100%; /* Ocupa largura */
+    align-items: stretch; /* Garante que botões estiquem se necessário */
+}
+
+/* Ajusta botão Traçar Rota dentro do novo container */
+#action-buttons-container #route-found-btn {
+     /* Mantém estilos anteriores como padding, background, etc. */
+     width: 100%; /* Garante largura total */
+     margin-bottom: 0; /* Remove margem se houver */
+     box-sizing: border-box; /* Importante */
+}
+#action-buttons-container #route-found-btn:disabled { /* Estilos disabled */ }
+#action-buttons-container #route-found-btn:hover:not(:disabled) { /* Estilo hover */ }
+
+
+/* Estilo para o NOVO botão Filtrar */
+#action-buttons-container #filter-results-btn {
+    padding: 8px;
+    font-size: 0.85em;
+    background-color: #17a2b8; /* Cor Ciano/Info */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%; /* Ocupa largura total */
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+    /* display: none; <<< Controle será feito via JS/inline style no HTML */
+}
+#action-buttons-container #filter-results-btn:hover {
+    background-color: #117a8b;
+}
+#action-buttons-container #filter-results-btn.active-filter { /* Estilo opcional quando filtro ativo */
+    background-color: #ffc107; /* Amarelo/Warning */
+    color: #333;
 }
 
 /* Botão "Traçar Rota" (da busca/categoria) - Seleciona por ID */
@@ -327,13 +362,11 @@ body {
     text-align: center; /* Garante texto centralizado */
     box-sizing: border-box; /* Importante para calc() */
 }
-
-/* Ajusta o container do botão Traçar Rota */
-#controls #top-controls-area #route-found-button-container {
-    padding-left: 0; /* Remove padding esquerdo desnecessário */
-    width: 100%; /* Ocupa toda a largura */
-    /*margin-top: 5px; /* Pequena margem acima dele */
+#controls #top-controls-area #action-buttons-container #filter-results-btn {
+    padding: 7px 5px;
+    font-size: 0.8em;
 }
+
 
 /* Faz o botão Traçar Rota ocupar a largura */
 #controls #top-controls-area #route-found-btn {
