@@ -236,37 +236,64 @@ function setupEventListeners() {
                    // Quando o usuário escolhe uma imagem...
                 // Quando o usuário escolhe uma imagem...
                         // Quando o usuário escolhe uma imagem...
-        imageInput.addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                return;
-            }
-
-            scanAddressBtn.textContent = '...';
-            searchInput.value = 'Reconhecendo texto...';
-            console.log("OCR PISTA 1: Imagem selecionada. Chamando Tesseract DIRETAMENTE.");
-
-            try {
-                const { data: { text } } = await Tesseract.recognize(
-                    file, // Enviando o arquivo original, sem processamento
-                    'por',
-                    { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
-                );
-                console.log("OCR PISTA 6: Tesseract finalizado. Texto reconhecido:", text);
-
-                if (searchInput) {
-                    searchInput.value = text.replace(/\n/g, ' ');
-                }
-
-                scanAddressBtn.textContent = '📷';
-
-            } catch (err) {
-                console.error("OCR PISTA 7: ERRO CAPTURADO!", err);
-                alert("Não foi possível ler o texto da imagem. Erro: " + err.message);
-                searchInput.value = '';
-                scanAddressBtn.textContent = '📷';
-            }
-        });
+                // Quando o usuário escolhe uma imagem...
+                imageInput.addEventListener('change', async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) { return; }
+        
+                    scanAddressBtn.textContent = '...';
+                    searchInput.value = 'Reconhecendo texto...';
+        
+                    try {
+                        // --- FASE 1: RECONHECIMENTO ---
+                        const { data: { text: fullText } } = await Tesseract.recognize(
+                            file,
+                            'por',
+                            { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
+                        );
+                        console.log("Texto completo reconhecido:", fullText);
+        
+                        // --- FASE 2: EXTRAÇÃO INTELIGENTE ---
+                        searchInput.value = 'Extraindo endereço...';
+                        
+                        // Quebra o texto completo em linhas individuais
+                        const lines = fullText.split('\n');
+                        
+                        // Palavras-chave que indicam um endereço
+                        const addressKeywords = ['rua', 'av', 'avenida', 'praça', 'alameda', 'travessa', 'cep', 'bairro'];
+                        
+                        let extractedAddress = '';
+        
+                        // Percorre cada linha do texto
+                        for (const line of lines) {
+                            // Verifica se a linha (em minúsculas) contém alguma palavra-chave
+                            const lowerLine = line.toLowerCase();
+                            if (addressKeywords.some(keyword => lowerLine.includes(keyword))) {
+                                extractedAddress += line + ' '; // Adiciona a linha ao nosso endereço final
+                            }
+                        }
+                        
+                        // Se não encontrou nada com palavras-chave, usa o texto todo como último recurso
+                        if (extractedAddress.trim() === '') {
+                            console.log("Nenhuma palavra-chave de endereço encontrada. Usando texto completo.");
+                            extractedAddress = fullText.replace(/\n/g, ' ');
+                        }
+        
+                        console.log("Endereço extraído:", extractedAddress.trim());
+        
+                        if (searchInput) {
+                            searchInput.value = extractedAddress.trim();
+                        }
+        
+                        scanAddressBtn.textContent = '📷';
+        
+                    } catch (err) {
+                        console.error("ERRO CAPTURADO!", err);
+                        alert("Não foi possível ler o texto da imagem. Erro: " + err.message);
+                        searchInput.value = '';
+                        scanAddressBtn.textContent = '📷';
+                    }
+                });
         } else {
             console.error("ERRO: Botão #scan-address-btn ou #image-input não encontrado!");
         }
