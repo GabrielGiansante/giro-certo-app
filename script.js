@@ -222,17 +222,50 @@ function setupEventListeners() {
     if (!backButton) { 
         console.warn("AVISO: Botão #back-button não encontrado."); 
     }
-    // --- Listener para o Botão de Scanner OCR ---
-    const scanAddressBtn = document.getElementById('scan-address-btn');
-    if (scanAddressBtn) {
-        scanAddressBtn.addEventListener('click', () => {
-            alert("Botão de Scanner clicado! A mágica do OCR virá aqui.");
-            // Futuramente, chamaremos a função de OCR aqui.
-            // handleImageScan(); 
-        });
-    } else {
-        console.error("ERRO: Botão #scan-address-btn não encontrado!");
-    }
+        // --- Listener para o Botão de Scanner OCR ---
+        const scanAddressBtn = document.getElementById('scan-address-btn');
+        const imageInput = document.getElementById('image-input');
+    
+        if (scanAddressBtn && imageInput) {
+            // Quando o botão da câmera é clicado...
+            scanAddressBtn.addEventListener('click', () => {
+                imageInput.click(); // ...clicamos no input de arquivo invisível.
+            });
+    
+            // Quando o usuário escolhe uma imagem...
+            imageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    return; // O usuário cancelou
+                }
+    
+                scanAddressBtn.textContent = '...'; // Mostra que está processando
+    
+                // Usa a biblioteca Tesseract.js para ler o texto da imagem
+                Tesseract.recognize(
+                    file,
+                    'por', // Especifica o idioma (por = português)
+                    {
+                        logger: m => console.log(m) // Mostra o progresso no console
+                    }
+                ).then(({ data: { text } }) => {
+                    console.log("Texto reconhecido:", text);
+                    
+                    // Coloca o texto reconhecido no campo de busca!
+                    if (searchInput) {
+                        searchInput.value = text.replace(/\n/g, ' '); // Remove quebras de linha
+                    }
+                    
+                    scanAddressBtn.textContent = '📷'; // Volta o botão ao normal
+                }).catch(err => {
+                    console.error("Erro no OCR:", err);
+                    alert("Não foi possível ler o texto da imagem.");
+                    scanAddressBtn.textContent = '📷'; // Volta o botão ao normal
+                });
+            });
+        } else {
+            console.error("ERRO: Botão #scan-address-btn ou #image-input não encontrado!");
+        }
     // --- Listener Botões de Categoria (Exatamente como no script base) ---
     // LEMBRETE: Chama clearFoundMarkers(), que limpa TUDO (manuais incluídos).
     categoryButtons.forEach(button => {
