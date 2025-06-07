@@ -1,0 +1,9 @@
+# Ignorar dependências do Node
+node_modules/
+
+# Ignorar arquivos de configuração do npm
+package.json
+package-lock.json
+
+# Ignorar logs do npm
+npm-debug.log*
