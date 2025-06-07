@@ -222,7 +222,17 @@ function setupEventListeners() {
     if (!backButton) { 
         console.warn("AVISO: Botão #back-button não encontrado."); 
     }
-
+    // --- Listener para o Botão de Scanner OCR ---
+    const scanAddressBtn = document.getElementById('scan-address-btn');
+    if (scanAddressBtn) {
+        scanAddressBtn.addEventListener('click', () => {
+            alert("Botão de Scanner clicado! A mágica do OCR virá aqui.");
+            // Futuramente, chamaremos a função de OCR aqui.
+            // handleImageScan(); 
+        });
+    } else {
+        console.error("ERRO: Botão #scan-address-btn não encontrado!");
+    }
     // --- Listener Botões de Categoria (Exatamente como no script base) ---
     // LEMBRETE: Chama clearFoundMarkers(), que limpa TUDO (manuais incluídos).
     categoryButtons.forEach(button => {
