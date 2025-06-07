@@ -200,7 +200,7 @@ function setupEventListeners() {
     categoryTitle = document.getElementById('category-title');
     categoryButtonsContainer = document.getElementById('category-buttons-container');
     filterResultsBtn = document.getElementById('filter-results-btn');
-    actionButtonsContainer = document.getElementById('action-buttons-containerÓtimo! Variáveis adicionadas.
+    actionButtonsContainer = document.getElementById('action-buttons-container');
     // Verifica elementos essenciais
     // ... (linha verificando !routeFoundBtn) ...
 // else if (!backButton) missingElement = '#back-button'; // Mantenha esta linha se ela existir
