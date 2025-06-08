@@ -519,43 +519,69 @@ function stopCamera() {
 }
 
 function captureImage() {
-    if (!cameraView) return;
+    if (!cameraView) {
+        console.error("PISTA DE ERRO: Função captureImage chamada, mas cameraView não existe.");
+        return;
+    }
+    console.log("PISTA 1: Botão 'Capturar' clicado. Função captureImage iniciada.");
+
     const canvas = document.createElement('canvas');
     const videoWidth = cameraView.videoWidth;
     const videoHeight = cameraView.videoHeight;
+    
+    // ... (cálculos de corte, que já estão corretos) ...
     const cropWidthPercent = 0.85;
     const cropHeightPercent = 0.35;
     const cropWidth = videoWidth * cropWidthPercent;
     const cropHeight = videoHeight * cropHeightPercent;
     const cropX = (videoWidth - cropWidth) / 2;
     const cropY = (videoHeight - cropHeight) / 2;
+
     canvas.width = cropWidth;
     canvas.height = cropHeight;
+
+    console.log("PISTA 2: Canvas criado e dimensionado. Desenhando imagem cortada...");
     const context = canvas.getContext('2d');
     context.drawImage(cameraView, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    console.log("PISTA 3: Imagem cortada desenhada no canvas.");
+
     stopCamera();
-    processImageWithTesseract(canvas.toDataURL());
+
+    const imageDataURL = canvas.toDataURL();
+    console.log("PISTA 4: Imagem convertida para DataURL. Chamando processImageWithTesseract...");
+    
+    processImageWithTesseract(imageDataURL);
 }
 
 async function processImageWithTesseract(imageData) {
+    console.log("PISTA 5: Função processImageWithTesseract iniciada.");
     scanAddressBtn.textContent = '...';
     searchInput.value = 'Reconhecendo texto...';
     try {
+        console.log("PISTA 6: Chamando Tesseract.recognize...");
         const { data: { text } } = await Tesseract.recognize(
             imageData,
             'por',
             { logger: m => console.log(`Tesseract: ${m.status} (${(m.progress * 100).toFixed(0)}%)`) }
         );
+        console.log("PISTA 7: Tesseract finalizado. Texto bruto: ", text);
+        
         const extractedAddress = extractAddressFromText(text);
-        if (searchInput) searchInput.value = extractedAddress;
+        console.log("PISTA 8: Endereço extraído: ", extractedAddress);
+
+        if (searchInput) {
+            searchInput.value = extractedAddress;
+            console.log("PISTA 9: Endereço inserido no campo de busca.");
+        }
         scanAddressBtn.textContent = '📷';
     } catch (err) {
-        console.error("ERRO no OCR:", err);
+        console.error("PISTA DE ERRO FINAL: Ocorreu um erro no bloco try/catch.", err);
         alert("Não foi possível ler o texto da imagem.");
         searchInput.value = '';
         scanAddressBtn.textContent = '📷';
     }
 }
+
 
 function extractAddressFromText(fullText) {
     const lines = fullText.split('\n');
