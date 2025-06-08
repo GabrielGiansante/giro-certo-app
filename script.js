@@ -38,6 +38,7 @@ let categoryTitle = null;
 let categoryButtonsContainer = null;
 let filterResultsBtn = null;
 let actionButtonsContainer = null;
+let scanAddressBtn = null; // Adiciona esta linha
 
 // --- Variáveis para a Câmera com Overlay ---
 let cameraOverlay = null;
@@ -227,7 +228,7 @@ function setupEventListeners() {
     }
     
     // --- Listener para o Botão de Scanner OCR ---
-    const scanAddressBtn = document.getElementById('scan-address-btn');
+     scanAddressBtn = document.getElementById('scan-address-btn');
     scanAddressBtn.addEventListener('click', () => {
         startCamera();
     });
