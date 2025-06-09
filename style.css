@@ -545,3 +545,9 @@ body {
     font-size: 1.2em;
     cursor: pointer;
 }
+.title-logo {
+    height: 25px; /* Altura da logo */
+    width: auto;
+    vertical-align: middle; /* Alinha a imagem com o texto */
+    margin-right: 8px;
+}
