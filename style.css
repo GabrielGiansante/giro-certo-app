@@ -545,3 +545,25 @@ body {
     font-size: 1.2em;
     cursor: pointer;
 }
+/* --- Estilos para Logo ao lado do Título --- */
+
+#title-container {
+    display: flex; /* Alinha os itens lado a lado */
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente o conjunto */
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.title-logo {
+    height: 30px; /* Define uma altura fixa para a logo */
+    width: auto; /* A largura se ajusta para manter a proporção */
+    margin-right: 10px; /* Adiciona um espaço entre a logo e o texto */
+}
+
+/* Ajusta a margem do título h2 que agora está dentro do container */
+#title-container h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.1em;
+}
