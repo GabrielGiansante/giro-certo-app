@@ -1,3 +1,29 @@
+/* --- Estilos da Splash Screen --- */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffffff; /* Fundo branco. Mude se quiser outra cor. */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+#splash-screen img {
+    max-width: 250px;
+    height: auto;
+}
+
+#splash-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
 /* Estilos gerais */
 body {
     font-family: sans-serif;

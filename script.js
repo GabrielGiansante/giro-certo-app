@@ -602,3 +602,15 @@ function extractAddressFromText(fullText) {
 
 // Chamada inicial
 console.log("Aguardando API do Google Maps chamar initMap...");
+
+// --- Lógica da Splash Screen ---
+window.addEventListener('load', () => {
+    const splash = document.getElementById('splash-screen');
+    
+    // Esconde a splash screen após 2 segundos
+    setTimeout(() => {
+        if (splash) {
+            splash.classList.add('hidden');
+        }
+    }, 2000); // 2000 milissegundos = 2 segundos
+});
