@@ -547,12 +547,26 @@ body {
 }
 /* --- Estilos para Logo no Topo do Painel --- */
 
-.logo-container {
-    padding: 10px 15px; /* Adiciona um espaçamento nas laterais e em cima/baixo */
+/* --- Estilos para Logo e Título na mesma linha --- */
+
+#title-container {
+    display: flex;
+    justify-content: space-between; /* <<< ISSO EMPURRA OS ITENS PARA OS EXTREMOS */
+    align-items: center;
+    padding: 10px 15px;
     border-bottom: 1px solid #eee;
 }
 
-.logo-image {
-    height: 35px; /* Altura da logo */
+#title-container .logo-image { /* Note a mudança no seletor */
+    height: 35px;
     width: auto;
+    flex-shrink: 0; /* Impede a logo de encolher */
+}
+
+#title-container h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.1em;
+    flex-grow: 1; /* Permite que o título ocupe o espaço restante */
+    text-align: right; /* Alinha o texto do título à direita */
 }
