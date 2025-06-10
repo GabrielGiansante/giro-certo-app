@@ -568,5 +568,5 @@ body {
     padding: 0;
     font-size: 1.1em;
     flex-grow: 1; /* Permite que o título ocupe o espaço restante */
-    text-align: right; /* Alinha o texto do título à direita */
+    text-align: center;  /* Alinha o texto do título à direita */
 }
