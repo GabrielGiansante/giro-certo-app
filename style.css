@@ -545,22 +545,28 @@ body {
     font-size: 1.2em;
     cursor: pointer;
 }
-/* --- Estilos para Logo Posicionada Manualmente --- */
+/* --- Estilos para Logo no Topo do Painel --- */
 
-/* Transforma o H2 em um container de referência */
-#category-title {
-    position: relative; /* Essencial para o posicionamento da logo */
-    text-align: center; /* Centraliza o texto "Escolha a categoria" */
-    padding: 15px 0;
+/* --- Estilos para Logo e Título na mesma linha --- */
+
+#title-container {
+    display: flex;
+    justify-content: space-between; /* <<< ISSO EMPURRA OS ITENS PARA OS EXTREMOS */
+    align-items: center;
+    padding: 10px 15px;
     border-bottom: 1px solid #eee;
 }
 
-/* Posiciona a logo de forma absoluta */
-#category-title .logo-image {
-    position: absolute; /* Permite posicionamento manual */
-    left: 15px; /* Distância da borda esquerda */
-    top: 50%; /* Alinha o topo da imagem com o meio do texto */
-    transform: translateY(-50%); /* Ajuste fino para centralizar verticalmente */
-    height: 30px;
+#title-container .logo-image { /* Note a mudança no seletor */
+    height: 35px;
     width: auto;
+    flex-shrink: 0; /* Impede a logo de encolher */
+}
+
+#title-container h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.1em;
+    flex-grow: 1; /* Permite que o título ocupe o espaço restante */
+    text-align: right; /* Alinha o texto do título à direita */
 }
