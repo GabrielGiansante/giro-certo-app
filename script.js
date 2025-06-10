@@ -59,34 +59,39 @@ watchId = null; foundMarkers = []; console.log(">>> Script Init: Resetado.");
 // --------------------
 
 function initMap() {
-    console.log(">>> initMap: Iniciando...");
-    userLocationMarker = null;
-    userLocationAccuracyCircle = null;
-    console.log(">>> initMap: Marcador/Círculo resetados para null.");
+    console.log(">>> initMap: Aguardando splash screen...");
 
-    if (navigator.geolocation) {
-        console.log(">>> initMap: Tentando obter localização inicial...");
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                console.log(">>> initMap: Localização inicial OBTIDA.");
-                currentUserLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-                initializeMapAndServices(currentUserLocation, 15);
-            },
-            (error) => {
-                console.warn(">>> initMap: Erro ao obter localização inicial.");
-                currentUserLocation = null;
-                const defaultCoords = { lat: -23.5505, lng: -46.6333 };
-                initializeMapAndServices(defaultCoords, 13);
-                handleLocationError(error, false);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-        );
-    } else {
-        console.warn(">>> initMap: Geolocalização não suportada.");
-        currentUserLocation = null;
-        const defaultCoords = { lat: -23.5505, lng: -46.6333 };
-        initializeMapAndServices(defaultCoords, 13);
-    }
+    // Atraso de 2.5 segundos para garantir que a splash screen já desapareceu
+    setTimeout(() => {
+        console.log(">>> initMap: Iniciando após atraso...");
+        userLocationMarker = null;
+        userLocationAccuracyCircle = null;
+        console.log(">>> initMap: Marcador/Círculo resetados para null.");
+
+        if (navigator.geolocation) {
+            console.log(">>> initMap: Tentando obter localização inicial...");
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log(">>> initMap: Localização inicial OBTIDA.");
+                    currentUserLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    initializeMapAndServices(currentUserLocation, 15);
+                },
+                (error) => {
+                    console.warn(">>> initMap: Erro ao obter localização inicial.");
+                    currentUserLocation = null;
+                    const defaultCoords = { lat: -23.5505, lng: -46.6333 };
+                    initializeMapAndServices(defaultCoords, 13);
+                    handleLocationError(error, false);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        } else {
+            console.warn(">>> initMap: Geolocalização não suportada.");
+            currentUserLocation = null;
+            const defaultCoords = { lat: -23.5505, lng: -46.6333 };
+            initializeMapAndServices(defaultCoords, 13);
+        }
+    }, 2500); // 2500 milissegundos = 2.5 segundos. Um pouco mais que a splash.
 }
 
 function initializeMapAndServices(initialCoords, initialZoom) {
