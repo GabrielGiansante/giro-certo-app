@@ -551,7 +551,7 @@ body {
 
 #title-container {
     display: flex;
-    justify-content: space-between; /* <<< ISSO EMPURRA OS ITENS PARA OS EXTREMOS */
+    justify-content: center; /* <<< ISSO EMPURRA OS ITENS PARA OS EXTREMOS */
     align-items: center;
     padding: 10px 15px;
     border-bottom: 1px solid #eee;
