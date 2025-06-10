@@ -1,3 +1,4 @@
+
 /* --- Estilos da Splash Screen --- */
 #splash-screen {
     position: fixed;
@@ -5,9 +6,10 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #ffffff; /* Fundo branco. Mude se quiser outra cor. */
+    background-color: #ffffff;
     z-index: 9999;
     display: flex;
+    flex-direction: column; /* <<< MUDA PARA COLUNA para empilhar a logo e o texto */
     justify-content: center;
     align-items: center;
     opacity: 1;
@@ -16,8 +18,16 @@
 }
 
 #splash-screen img {
-    max-width: 450px;
+    max-width: 350px; /* Mantém o tamanho maior */
     height: auto;
+    margin-bottom: 20px; /* <<< ADICIONA ESPAÇO entre a logo e o nome */
+}
+
+/* NOVO ESTILO PARA O TÍTULO */
+.splash-title {
+    font-size: 2.5em; /* Tamanho da fonte do nome */
+    color: #333; /* Cor do texto (pode mudar) */
+    margin: 0;
 }
 
 #splash-screen.hidden {
