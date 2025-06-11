@@ -351,7 +351,7 @@ body {
         border-radius: 0; /* Remove bordas arredondadas */
         min-height: 100vh; /* Garante altura total */
         height: 100vh; /* Força altura total */
-        overflow: auto; /* Evita rolagem do container principal */
+        overflow: hidden; /* Evita rolagem do container principal */
     }
 
     #controls {
@@ -361,8 +361,8 @@ body {
         border-right: none; /* Remove borda direita */
         border-bottom: 1px solid #eee; /* Adiciona borda inferior separadora */
         /* ===== ALTURA LIMITADA PARA CONTROLES (AJUSTE ESTE VALOR) ===== */
-        
-        overflow: visible; /* Esconde overflow; rolagem será interna em #scrollable-controls */
+        max-height: 45vh; /* Ex: máximo 45% da altura da tela */
+        overflow: hidden; /* Esconde overflow; rolagem será interna em #scrollable-controls */
         /* display: flex e flex-direction: column já definidos */
     }
 
@@ -420,7 +420,7 @@ body {
     #map-container {
         width: 100%; /* Ocupa largura total */
         flex-grow: 1; /* Ocupa o espaço vertical restante na coluna */
-        min-height: 400px; /* Essencial para flexbox permitir encolher/esticar corretamente */
+        min-height: 0; /* Essencial para flexbox permitir encolher/esticar corretamente */
     }
 
     /* Ocultar/Mostrar no modo mapa JÁ está definido fora da media query,
