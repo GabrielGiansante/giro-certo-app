@@ -18,7 +18,7 @@
 }
 
 #splash-screen img {
-    max-width: 350px; /* Mantém o tamanho maior */
+    max-width: 300px; /* Mantém o tamanho maior */
     height: auto;
     margin-bottom: 20px; /* <<< ADICIONA ESPAÇO entre a logo e o nome */
 }
